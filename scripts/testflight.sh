@@ -41,8 +41,10 @@ PROJECT="HermesVoice.xcodeproj"
 echo "==> xcodegen generate"
 xcodegen generate >/dev/null
 
-VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Sources/Info.plist)"
-BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' Sources/Info.plist)"
+# Lê das build settings resolvidas (o Sources/Info.plist tem placeholders $(...) não resolvidos).
+SETTINGS="$(xcodebuild -project "$PROJECT" -scheme "$SCHEME" -showBuildSettings 2>/dev/null)"
+VERSION="$(printf '%s\n' "$SETTINGS" | awk -F' = ' '/ MARKETING_VERSION = /{print $2; exit}')"
+BUILD="$(printf '%s\n' "$SETTINGS" | awk -F' = ' '/ CURRENT_PROJECT_VERSION = /{print $2; exit}')"
 echo "==> Enviando ${SCHEME} ${VERSION} (${BUILD})"
 
 ARCH_DIR="$HOME/Library/Developer/Xcode/Archives/$(date +%Y-%m-%d)"
