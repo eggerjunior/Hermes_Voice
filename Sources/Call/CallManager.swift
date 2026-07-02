@@ -25,10 +25,6 @@ class CallManager: NSObject {
         let configuration = CXProviderConfiguration()
         configuration.supportsVideo = false
         configuration.maximumCallsPerCallGroup = 1
-        // Padrão é 2. Elevado para absorver "grupos de chamada" presos e invisíveis
-        // de sessões anteriores (causa do error 6 / maximumCallGroupsReached ao
-        // iniciar pelo Atalhos em cold start), permitindo iniciar a nova chamada.
-        configuration.maximumCallGroups = 8
         configuration.supportedHandleTypes = [.generic]
         return configuration
     }

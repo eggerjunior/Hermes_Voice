@@ -16,8 +16,8 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.9"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "20"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.10"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "21"
         return "\(version) (Build \(build))"
     }
     
@@ -56,6 +56,17 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.2.10",
+            build: "21",
+            date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "Atalho/Siri volta a funcionar: revertido para abrir o app ao iniciar (openAppWhenRun=true), como na versão original. O erro 6 vinha de rodar em background (limitação do iOS).",
+                "Removido ajuste inútil de maximumCallGroups (baseado em diagnóstico incorreto).",
+                "Hands-free 100% na tela bloqueada segue pendente da entitlement de CarPlay Communication."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.2.9",
             build: "20",
             date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
@@ -63,7 +74,7 @@ class VersionManager {
                 "CallKit error 6 resolvido: grupo de chamada preso e invisível de sessões anteriores era a causa; elevado o limite de grupos (maximumCallGroups) para permitir iniciar a chamada pelo Atalhos.",
                 "Corrigida a detecção do erro (o retry não estava disparando)."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.2.8",
