@@ -16,8 +16,8 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.8"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "19"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.9"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "20"
         return "\(version) (Build \(build))"
     }
     
@@ -56,13 +56,23 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.2.9",
+            build: "20",
+            date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "CallKit error 6 resolvido: grupo de chamada preso e invisível de sessões anteriores era a causa; elevado o limite de grupos (maximumCallGroups) para permitir iniciar a chamada pelo Atalhos.",
+                "Corrigida a detecção do erro (o retry não estava disparando)."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.2.8",
             build: "19",
             date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
             changes: [
                 "Diagnóstico do CallKit error 6: o alerta de erro agora mostra o estado das chamadas (para rastrear a causa quando iniciado pelo Atalhos)."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.2.7",

@@ -25,6 +25,10 @@ class CallManager: NSObject {
         let configuration = CXProviderConfiguration()
         configuration.supportsVideo = false
         configuration.maximumCallsPerCallGroup = 1
+        // Padrão é 2. Elevado para absorver "grupos de chamada" presos e invisíveis
+        // de sessões anteriores (causa do error 6 / maximumCallGroupsReached ao
+        // iniciar pelo Atalhos em cold start), permitindo iniciar a nova chamada.
+        configuration.maximumCallGroups = 8
         configuration.supportedHandleTypes = [.generic]
         return configuration
     }
@@ -82,10 +86,9 @@ class CallManager: NSObject {
             if let error = error {
                 let nsError = error as NSError
                 let snap = self.callStateSnapshot()
-                // Domínio "com.apple.CallKit.error.requesttransaction", código 6 =
-                // maximumCallGroupsReached (chamada presa de sessão anterior).
-                let isBusy = nsError.domain == "com.apple.CallKit.error.requesttransaction"
-                    && nsError.code == CXErrorCodeRequestTransactionError.maximumCallGroupsReached.rawValue
+                // O domínio bridgeado do erro varia; código 6 numa falha de
+                // CXStartCallAction = maximumCallGroupsReached (grupo preso).
+                let isBusy = nsError.code == CXErrorCodeRequestTransactionError.maximumCallGroupsReached.rawValue
                 if isBusy && retryOnBusy {
                     // Chamada presa: recria o provider (encerra tudo) e tenta 1x de novo.
                     print("CallKit ocupado (error 6). Reset+retry. pre=\(snap)")
