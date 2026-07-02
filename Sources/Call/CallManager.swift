@@ -59,7 +59,18 @@ class CallManager: NSObject {
         }
     }
 
-    private func requestStartCall(retryOnBusy: Bool) {
+    // Snapshot do estado de chamadas visível ao app — diagnóstico do error 6.
+    private func callStateSnapshot() -> String {
+        let calls = callController.callObserver.calls
+        if calls.isEmpty { return "obs=0" }
+        let parts = calls.prefix(4).map { c -> String in
+            let id = String(c.uuid.uuidString.prefix(8))
+            return "\(id)[end:\(c.hasEnded ? 1 : 0) conn:\(c.hasConnected ? 1 : 0) out:\(c.isOutgoing ? 1 : 0)]"
+        }
+        return "obs=\(calls.count) " + parts.joined(separator: " ")
+    }
+
+    private func requestStartCall(retryOnBusy: Bool, priorInfo: String = "") {
         let uuid = UUID()
         self.activeCallUUID = uuid
         let handle = CXHandle(type: .generic, value: "Hermes Voice")
@@ -70,23 +81,27 @@ class CallManager: NSObject {
             guard let self = self else { return }
             if let error = error {
                 let nsError = error as NSError
+                let snap = self.callStateSnapshot()
                 // Domínio "com.apple.CallKit.error.requesttransaction", código 6 =
                 // maximumCallGroupsReached (chamada presa de sessão anterior).
                 let isBusy = nsError.domain == "com.apple.CallKit.error.requesttransaction"
                     && nsError.code == CXErrorCodeRequestTransactionError.maximumCallGroupsReached.rawValue
                 if isBusy && retryOnBusy {
-                    // Chamada presa de uma sessão anterior: recria o provider (encerra
-                    // tudo, garantido) e tenta iniciar uma única vez de novo.
-                    print("CallKit ocupado (error 6). Recriando o provider e tentando novamente.")
+                    // Chamada presa: recria o provider (encerra tudo) e tenta 1x de novo.
+                    print("CallKit ocupado (error 6). Reset+retry. pre=\(snap)")
                     self.resetProvider()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                        self.requestStartCall(retryOnBusy: false)
+                        self.requestStartCall(retryOnBusy: false, priorInfo: "pre:\(snap)")
                     }
                     return
                 }
-                print("Erro ao solicitar transação de chamada (CXStartCallAction): \(error.localizedDescription)")
+                print("Erro CXStartCallAction: \(error.localizedDescription) | \(priorInfo) post:\(snap)")
+                // Erro enriquecido com o estado das chamadas (diagnóstico do error 6).
+                let detail = "CallKit code=\(nsError.code) \(priorInfo) post:\(snap)"
+                let enriched = NSError(domain: nsError.domain, code: nsError.code,
+                                       userInfo: [NSLocalizedDescriptionKey: detail])
                 DispatchQueue.main.async {
-                    self.delegate?.callManagerDidFail(withError: error)
+                    self.delegate?.callManagerDidFail(withError: enriched)
                 }
             } else {
                 // Notifica o CallKit que a chamada iniciou a conexão e foi conectada com sucesso
