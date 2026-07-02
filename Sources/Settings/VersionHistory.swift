@@ -17,7 +17,7 @@ class VersionManager {
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.1"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "10"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "11"
         return "\(version) (Build \(build))"
     }
     
@@ -44,12 +44,13 @@ class VersionManager {
     let history: [VersionEntry] = [
         VersionEntry(
             version: "1.2.1",
-            build: "10",
+            build: "11",
             date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
             changes: [
                 "Funcionamento com a tela bloqueada: o comando Siri inicia a chamada via CallKit em background (sem exigir desbloqueio).",
                 "Detecção de fim de fala movida para o run loop principal (confiável em background).",
-                "Nome da chamada no CallKit atualizado para \"Hermes Voice\"."
+                "Nome da chamada no CallKit atualizado para \"Hermes Voice\".",
+                "App definido como iPhone-only e orientação retrato declarada (requisitos de bundle para TestFlight)."
             ],
             isCurrent: true
         ),
