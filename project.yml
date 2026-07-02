@@ -23,6 +23,7 @@ targets:
         UILaunchScreen: {}
         NSMicrophoneUsageDescription: "Para conversar por voz com o Hermes."
         NSSpeechRecognitionUsageDescription: "Para transcrever sua fala durante a conversa."
+        ITSAppUsesNonExemptEncryption: false
         UIBackgroundModes: [audio, voip]
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
