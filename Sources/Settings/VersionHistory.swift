@@ -16,8 +16,8 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.6"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "17"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.7"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "18"
         return "\(version) (Build \(build))"
     }
     
@@ -56,13 +56,22 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.2.7",
+            build: "18",
+            date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "Correção definitiva do CallKit error 6 ao iniciar pelo Atalhos: ao detectar chamada presa, recria o provider (encerra tudo) e tenta novamente."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.2.6",
             build: "17",
             date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
             changes: [
                 "Limpeza de avisos de compilação: init do CallKit atualizado, Sendable nos singletons e UIRequiresFullScreen (iPhone-only)."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.2.5",

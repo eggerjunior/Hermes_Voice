@@ -13,41 +13,53 @@ protocol CallManagerDelegate: AnyObject {
 class CallManager: NSObject {
     static let shared = CallManager()
     
-    private let provider: CXProvider
+    private var provider: CXProvider
     private let callController = CXCallController()
     private var activeCallUUID: UUID?
-    
+
     weak var delegate: CallManagerDelegate?
-    
-    private override init() {
-        // CXProviderConfiguration() (iOS 14+); o nome exibido na chamada vem do CXHandle
-        // ("Hermes Voice") e do nome do app — evita o init(localizedName:) depreciado.
+
+    // CXProviderConfiguration() (iOS 14+); o nome exibido na chamada vem do CXHandle
+    // ("Hermes Voice") e do nome do app — evita o init(localizedName:) depreciado.
+    private static func makeConfiguration() -> CXProviderConfiguration {
         let configuration = CXProviderConfiguration()
         configuration.supportsVideo = false
         configuration.maximumCallsPerCallGroup = 1
         configuration.supportedHandleTypes = [.generic]
-        
-        self.provider = CXProvider(configuration: configuration)
+        return configuration
+    }
+
+    private override init() {
+        self.provider = CXProvider(configuration: Self.makeConfiguration())
         super.init()
         provider.setDelegate(self, queue: nil)
     }
-    
+
+    /// Recria o provider do zero. `invalidate()` encerra TODAS as chamadas associadas,
+    /// limpando qualquer chamada presa que cause o CallKit error 6
+    /// (maximumCallGroupsReached) — comum ao iniciar pelo app Atalhos em cold start.
+    private func resetProvider() {
+        provider.invalidate()
+        provider = CXProvider(configuration: Self.makeConfiguration())
+        provider.setDelegate(self, queue: nil)
+    }
+
     func startCall() {
-        // Encerra chamadas remanescentes antes de iniciar uma nova.
-        // Evita o CallKit error 6 (maximumCallGroupsReached) quando uma chamada
-        // anterior não foi finalizada (ex.: acionada de novo pelo app Atalhos).
+        // Encerra chamadas remanescentes conhecidas antes de iniciar uma nova.
         let lingering = callController.callObserver.calls.filter { !$0.hasEnded }
-        guard !lingering.isEmpty else {
-            requestStartCall()
-            return
-        }
-        let endActions = lingering.map { CXEndCallAction(call: $0.uuid) }
-        callController.request(CXTransaction(actions: endActions)) { [weak self] _ in
-            self?.requestStartCall()
+        if lingering.isEmpty {
+            requestStartCall(retryOnBusy: true)
+        } else {
+            let endActions = lingering.map { CXEndCallAction(call: $0.uuid) }
+            callController.request(CXTransaction(actions: endActions)) { [weak self] _ in
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self?.requestStartCall(retryOnBusy: true)
+                }
+            }
         }
     }
 
-    private func requestStartCall() {
+    private func requestStartCall(retryOnBusy: Bool) {
         let uuid = UUID()
         self.activeCallUUID = uuid
         let handle = CXHandle(type: .generic, value: "Hermes Voice")
@@ -55,15 +67,31 @@ class CallManager: NSObject {
 
         let transaction = CXTransaction(action: startCallAction)
         callController.request(transaction) { [weak self] error in
+            guard let self = self else { return }
             if let error = error {
+                let nsError = error as NSError
+                // Domínio "com.apple.CallKit.error.requesttransaction", código 6 =
+                // maximumCallGroupsReached (chamada presa de sessão anterior).
+                let isBusy = nsError.domain == "com.apple.CallKit.error.requesttransaction"
+                    && nsError.code == CXErrorCodeRequestTransactionError.maximumCallGroupsReached.rawValue
+                if isBusy && retryOnBusy {
+                    // Chamada presa de uma sessão anterior: recria o provider (encerra
+                    // tudo, garantido) e tenta iniciar uma única vez de novo.
+                    print("CallKit ocupado (error 6). Recriando o provider e tentando novamente.")
+                    self.resetProvider()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        self.requestStartCall(retryOnBusy: false)
+                    }
+                    return
+                }
                 print("Erro ao solicitar transação de chamada (CXStartCallAction): \(error.localizedDescription)")
                 DispatchQueue.main.async {
-                    self?.delegate?.callManagerDidFail(withError: error)
+                    self.delegate?.callManagerDidFail(withError: error)
                 }
             } else {
                 // Notifica o CallKit que a chamada iniciou a conexão e foi conectada com sucesso
-                self?.provider.reportOutgoingCall(with: uuid, startedConnectingAt: nil)
-                self?.provider.reportOutgoingCall(with: uuid, connectedAt: nil)
+                self.provider.reportOutgoingCall(with: uuid, startedConnectingAt: nil)
+                self.provider.reportOutgoingCall(with: uuid, connectedAt: nil)
             }
         }
     }
