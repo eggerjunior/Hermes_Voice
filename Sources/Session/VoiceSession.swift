@@ -9,7 +9,10 @@ enum SessionState: String {
     case speaking = "Hermes Falando..."
 }
 
-class VoiceSession: ObservableObject {
+// @unchecked Sendable: singleton com acesso concorrente controlado (estado de UI na
+// main thread; buffers de áudio na thread de áudio). Silencia os avisos de captura de
+// `self` em closures @Sendable (Task) sem alterar o comportamento em runtime.
+class VoiceSession: ObservableObject, @unchecked Sendable {
     static let shared = VoiceSession()
     
     @Published var sessionState: SessionState = .idle

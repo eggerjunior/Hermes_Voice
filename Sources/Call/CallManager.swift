@@ -20,7 +20,9 @@ class CallManager: NSObject {
     weak var delegate: CallManagerDelegate?
     
     private override init() {
-        let configuration = CXProviderConfiguration(localizedName: "Hermes Voice")
+        // CXProviderConfiguration() (iOS 14+); o nome exibido na chamada vem do CXHandle
+        // ("Hermes Voice") e do nome do app — evita o init(localizedName:) depreciado.
+        let configuration = CXProviderConfiguration()
         configuration.supportsVideo = false
         configuration.maximumCallsPerCallGroup = 1
         configuration.supportedHandleTypes = [.generic]

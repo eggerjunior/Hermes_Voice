@@ -6,7 +6,10 @@ protocol SpeechSynthesizerDelegate: AnyObject {
     func speechSynthesizerDidFinishSpeaking()
 }
 
-class SpeechSynthesizer: NSObject {
+// @unchecked Sendable: singleton; toda a interação com o AVSpeechSynthesizer é
+// serializada na main queue (ver métodos abaixo). Silencia o aviso da propriedade
+// não-Sendable sem alterar o comportamento em runtime.
+class SpeechSynthesizer: NSObject, @unchecked Sendable {
     static let shared = SpeechSynthesizer()
 
     private let synthesizer = AVSpeechSynthesizer()

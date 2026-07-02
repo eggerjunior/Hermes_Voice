@@ -25,7 +25,9 @@ protocol HermesAgentClientProtocol {
 /// - Auth: `Authorization: Bearer <API_SERVER_KEY>`
 /// - Continuidade da conversa: header `X-Hermes-Session-Id` (fixo por conversa)
 /// - Health check: `GET {base}/health`
-class HermesAgentClient: NSObject, HermesAgentClientProtocol {
+// @unchecked Sendable: singleton; estado de conexão publicado na main thread e
+// requisições em Task controladas. Silencia avisos de captura em closures @Sendable.
+class HermesAgentClient: NSObject, HermesAgentClientProtocol, @unchecked Sendable {
     static let shared = HermesAgentClient()
 
     @Published private(set) var connectionState: HermesConnectionState = .disconnected

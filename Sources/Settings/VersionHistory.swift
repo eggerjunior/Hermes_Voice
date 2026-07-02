@@ -16,8 +16,8 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.5"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "16"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.6"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "17"
         return "\(version) (Build \(build))"
     }
     
@@ -56,6 +56,15 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.2.6",
+            build: "17",
+            date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "Limpeza de avisos de compilação: init do CallKit atualizado, Sendable nos singletons e UIRequiresFullScreen (iPhone-only)."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.2.5",
             build: "16",
             date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
@@ -63,7 +72,7 @@ class VersionManager {
                 "Hash do commit exibido no rodapé, com link para abrir o commit no GitHub (navegador padrão).",
                 "Commit também registrado no Log do Agente ao conectar."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.2.4",
