@@ -52,7 +52,17 @@ class HermesAgentClient: NSObject, HermesAgentClientProtocol {
         print(message)
         DispatchQueue.main.async {
             self.lastConnectionLog += message + "\n"
+            // Evita crescimento sem limite em chamadas longas.
+            if self.lastConnectionLog.count > 8000 {
+                self.lastConnectionLog = String(self.lastConnectionLog.suffix(6000))
+            }
         }
+    }
+
+    private func timestamp() -> String {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm:ss"
+        return f.string(from: Date())
     }
 
     // MARK: - Construção da URL base
@@ -184,6 +194,9 @@ class HermesAgentClient: NSObject, HermesAgentClientProtocol {
                     ]
                     request.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
 
+                    let preview = userText.count > 60 ? String(userText.prefix(60)) + "…" : userText
+                    self.appendLog("→ [\(self.timestamp())] Enviando ao agente: \"\(preview)\"")
+
                     let (bytes, response) = try await URLSession.shared.bytes(for: request)
 
                     if let http = response as? HTTPURLResponse,
@@ -193,6 +206,9 @@ class HermesAgentClient: NSObject, HermesAgentClientProtocol {
                         for try await line in bytes.lines { body += line }
                         throw self.httpError(http.statusCode, data: body.data(using: .utf8))
                     }
+
+                    var receivedChars = 0
+                    var firstToken = true
 
                     for try await line in bytes.lines {
                         if Task.isCancelled { break }
@@ -210,15 +226,26 @@ class HermesAgentClient: NSObject, HermesAgentClientProtocol {
                             continue
                         }
 
+                        // Registra ferramentas que o agente está executando (se o servidor as expõe).
+                        for tool in Self.extractToolNames(from: obj) {
+                            self.appendLog("🔧 [\(self.timestamp())] Executando ferramenta: \(tool)")
+                        }
+
                         if let delta = Self.extractDelta(from: obj), !delta.isEmpty {
+                            if firstToken {
+                                firstToken = false
+                                self.appendLog("← [\(self.timestamp())] Agente respondendo…")
+                            }
+                            receivedChars += delta.count
                             continuation.yield(delta)
                         }
                     }
 
+                    self.appendLog("✓ [\(self.timestamp())] Turno concluído (\(receivedChars) caracteres)")
                     continuation.finish()
                 } catch {
                     if !Task.isCancelled {
-                        self.appendLog("Erro no turno: \(error.localizedDescription)")
+                        self.appendLog("✗ [\(self.timestamp())] Erro no turno: \(error.localizedDescription)")
                     }
                     continuation.finish(throwing: error)
                 }
@@ -249,6 +276,20 @@ class HermesAgentClient: NSObject, HermesAgentClientProtocol {
             return content
         }
         return nil
+    }
+
+    /// Extrai nomes de ferramentas invocadas no chunk (`choices[0].delta.tool_calls[].function.name`),
+    /// caso o servidor exponha a execução do agente no stream OpenAI-compatível.
+    private static func extractToolNames(from obj: [String: Any]) -> [String] {
+        guard let choices = obj["choices"] as? [[String: Any]],
+              let first = choices.first,
+              let delta = first["delta"] as? [String: Any],
+              let toolCalls = delta["tool_calls"] as? [[String: Any]] else {
+            return []
+        }
+        return toolCalls.compactMap { call in
+            (call["function"] as? [String: Any])?["name"] as? String
+        }.filter { !$0.isEmpty }
     }
 
     private func httpError(_ statusCode: Int, data: Data?) -> NSError {

@@ -55,8 +55,32 @@ struct RootView: View {
                                 .cornerRadius(12)
                                 .transition(.opacity)
                         }
+
+                        // Transcrição da resposta do Hermes (streaming ao vivo)
+                        if !session.hermesResponse.isEmpty {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Resposta do Hermes")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.secondary)
+                                ScrollView {
+                                    Text(session.hermesResponse)
+                                        .font(.body)
+                                        .foregroundColor(.primary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .multilineTextAlignment(.leading)
+                                }
+                                .frame(maxHeight: 140)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(Color(.secondarySystemBackground))
+                            .cornerRadius(12)
+                            .padding(.horizontal, 24)
+                            .transition(.opacity)
+                        }
                     }
-                    
+
                     // Botão Principal (Inicia / Encerra CallKit)
                     Button(action: {
                         if session.isCallActive {
@@ -110,7 +134,7 @@ struct RootView: View {
                     
                     if !session.connectionLog.isEmpty {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Log do WebSocket:")
+                            Text("Log do Agente:")
                                 .font(.caption)
                                 .fontWeight(.bold)
                                 .foregroundColor(.secondary)

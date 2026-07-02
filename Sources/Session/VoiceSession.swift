@@ -18,6 +18,7 @@ class VoiceSession: ObservableObject {
     @Published var isMuted: Bool = false
     @Published var errorMessage: String? = nil
     @Published var currentTranscript: String = ""
+    @Published var hermesResponse: String = ""
     @Published var connectionLog: String = ""
     
     private var cancellables = Set<AnyCancellable>()
@@ -204,13 +205,17 @@ extension VoiceSession: SpeechRecognizerDelegate {
         Task {
             do {
                 accumulatedResponse = ""
-                // Pede a resposta em streaming pelo WebSocket
+                DispatchQueue.main.async { self.hermesResponse = "" }
+                // Pede a resposta em streaming ao API server do Hermes
                 let stream = HermesAgentClient.shared.send(text)
-                
+
                 for try await chunk in stream {
                     accumulatedResponse += chunk
+                    // Atualiza a transcrição da resposta ao vivo, conforme os tokens chegam
+                    let current = accumulatedResponse
+                    DispatchQueue.main.async { self.hermesResponse = current }
                 }
-                
+
                 let textToSpeak = accumulatedResponse
                 
                 DispatchQueue.main.async {
