@@ -206,6 +206,13 @@ extension VoiceSession: SpeechRecognizerDelegate {
             do {
                 accumulatedResponse = ""
                 DispatchQueue.main.async { self.hermesResponse = "" }
+                let rate = SettingsStore.shared.ttsRate
+
+                // Fala incremental: começa a narrar assim que a primeira frase fica pronta,
+                // em vez de esperar a resposta inteira. Reduz muito o atraso percebido.
+                SpeechSynthesizer.shared.beginTurn()
+                var buffer = ""
+
                 // Pede a resposta em streaming ao API server do Hermes
                 let stream = HermesAgentClient.shared.send(text)
 
@@ -214,28 +221,56 @@ extension VoiceSession: SpeechRecognizerDelegate {
                     // Atualiza a transcrição da resposta ao vivo, conforme os tokens chegam
                     let current = accumulatedResponse
                     DispatchQueue.main.async { self.hermesResponse = current }
-                }
 
-                let textToSpeak = accumulatedResponse
-                
-                DispatchQueue.main.async {
-                    if !textToSpeak.isEmpty {
-                        self.sessionState = .speaking
-                        SpeechSynthesizer.shared.speak(textToSpeak, rate: SettingsStore.shared.ttsRate)
-                    } else {
-                        // Resposta nula ou vazia: retorna ao estado de escuta
-                        self.sessionState = .listening
-                        try? SpeechRecognizer.shared.startRecording()
+                    // Enfileira as frases completas para fala imediata
+                    buffer += chunk
+                    while let sentence = self.nextSentence(from: &buffer) {
+                        SpeechSynthesizer.shared.enqueue(sentence, rate: rate)
                     }
                 }
+
+                // Fala o que sobrou (última frase, possivelmente sem pontuação final)
+                let remainder = buffer.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !remainder.isEmpty {
+                    SpeechSynthesizer.shared.enqueue(remainder, rate: rate)
+                }
+                // Fecha o turno. Se a resposta veio vazia, o sintetizador avisa o fim
+                // e o app volta a ouvir automaticamente.
+                SpeechSynthesizer.shared.endTurn()
             } catch {
                 print("Erro ao enviar ou receber do Hermes: \(error.localizedDescription)")
+                SpeechSynthesizer.shared.stop()
                 DispatchQueue.main.async {
                     self.sessionState = .listening
                     try? SpeechRecognizer.shared.startRecording()
                 }
             }
         }
+    }
+
+    /// Extrai a próxima frase completa do buffer (pontuação de fim seguida de espaço,
+    /// ou quebra de linha), deixando o texto ainda incompleto no buffer. Evita cortar
+    /// números/decimais no meio (só divide quando há espaço após a pontuação).
+    private func nextSentence(from buffer: inout String) -> String? {
+        while let first = buffer.first, first.isWhitespace { buffer.removeFirst() }
+        let enders: Set<Character> = [".", "!", "?", "…"]
+        var idx = buffer.startIndex
+        while idx < buffer.endIndex {
+            let ch = buffer[idx]
+            let next = buffer.index(after: idx)
+            if ch.isNewline {
+                let sentence = String(buffer[..<idx]).trimmingCharacters(in: .whitespacesAndNewlines)
+                buffer = next < buffer.endIndex ? String(buffer[next...]) : ""
+                return sentence.isEmpty ? nil : sentence
+            }
+            if enders.contains(ch), next < buffer.endIndex, buffer[next].isWhitespace {
+                let sentence = String(buffer[...idx]).trimmingCharacters(in: .whitespacesAndNewlines)
+                buffer = String(buffer[next...])
+                return sentence.isEmpty ? nil : sentence
+            }
+            idx = next
+        }
+        return nil
     }
 }
 

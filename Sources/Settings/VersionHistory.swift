@@ -16,8 +16,8 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.3"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "14"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.4"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "15"
         return "\(version) (Build \(build))"
     }
     
@@ -43,6 +43,16 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.2.4",
+            build: "15",
+            date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "Resposta mais ágil: fala incremental — começa a narrar assim que a primeira frase fica pronta, sem esperar a resposta inteira.",
+                "Tempo de silêncio do reconhecimento reduzido de 1,2s para 0,8s."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.2.3",
             build: "14",
             date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
@@ -50,7 +60,7 @@ class VersionManager {
                 "Nova área de transcrição exibindo a resposta do Hermes ao vivo (streaming).",
                 "Log do Agente: mostra os eventos de execução (envio, resposta, ferramentas e conclusão do turno)."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.2.2",
