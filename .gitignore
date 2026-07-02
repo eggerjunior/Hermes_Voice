@@ -12,3 +12,7 @@ xcuserdata/
 # Swift Package Manager
 .build/
 .swiftpm/
+
+# App Store Connect API (segredos — NUNCA versionar)
+scripts/asc.env
+*.p8
