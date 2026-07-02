@@ -16,8 +16,8 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.1"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "12"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.2"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "13"
         return "\(version) (Build \(build))"
     }
     
@@ -43,6 +43,16 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.2.2",
+            build: "13",
+            date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "Viva-voz (alto-falante) como saída de áudio padrão, respeitando fones/Bluetooth/carro quando conectados.",
+                "Corrige erro do CallKit (error 6) ao iniciar chamada pelo app Atalhos: encerra chamadas remanescentes antes de iniciar uma nova."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.2.1",
             build: "12",
             date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
@@ -52,7 +62,7 @@ class VersionManager {
                 "Nome da chamada no CallKit atualizado para \"Hermes Voice\".",
                 "App definido como iPhone-only e orientação retrato declarada (requisitos de bundle para TestFlight)."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.2.0",
