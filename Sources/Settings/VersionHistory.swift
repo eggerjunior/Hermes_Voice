@@ -16,8 +16,8 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1.0"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "7"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1.1"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "8"
         return "\(version) (Build \(build))"
     }
     
@@ -43,6 +43,15 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.1.1",
+            build: "8",
+            date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "Nome de exibição do app alterado para \"Hermes Voice\"."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.1.0",
             build: "7",
             date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
@@ -53,7 +62,7 @@ class VersionManager {
                 "Adicionado botão \"Testar conexão\" nas Configurações (health check com feedback de sucesso/erro).",
                 "Tela de conexão atualizada: campos \"URL da API\" e \"API Key\"."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.0.5",
