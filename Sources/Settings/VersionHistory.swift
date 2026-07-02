@@ -16,8 +16,8 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1.1"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "8"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "9"
         return "\(version) (Build \(build))"
     }
     
@@ -43,13 +43,23 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.2.0",
+            build: "9",
+            date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "Comando de voz Siri: \"Ei Siri, iniciar Hermes Voice\" inicia a chamada.",
+                "App Shortcut aberto automaticamente ao acionar por voz (openAppWhenRun)."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.1.1",
             build: "8",
             date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
             changes: [
                 "Nome de exibição do app alterado para \"Hermes Voice\"."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.1.0",
