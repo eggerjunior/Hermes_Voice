@@ -20,7 +20,7 @@ class CallManager: NSObject {
     weak var delegate: CallManagerDelegate?
     
     private override init() {
-        let configuration = CXProviderConfiguration(localizedName: "Hermes")
+        let configuration = CXProviderConfiguration(localizedName: "Hermes Voice")
         configuration.supportsVideo = false
         configuration.maximumCallsPerCallGroup = 1
         configuration.supportedHandleTypes = [.generic]

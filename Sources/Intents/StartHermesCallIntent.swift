@@ -5,8 +5,10 @@ struct StartHermesCallIntent: AppIntent {
     static var title: LocalizedStringResource = "Iniciar Hermes Voice"
     static var description = IntentDescription("Inicia uma chamada de voz com o agente Hermes.")
 
-    // Abre o app ao executar: a chamada precisa de microfone e áudio em foreground.
-    static var openAppWhenRun: Bool = true
+    // NÃO abre o app: roda em background para que o CallKit apresente a chamada
+    // mesmo com a tela bloqueada (sem exigir desbloqueio). O áudio/microfone é
+    // gerenciado pela sessão de chamada VoIP do CallKit, que funciona bloqueada.
+    static var openAppWhenRun: Bool = false
 
     @MainActor
     func perform() async throws -> some ReturnsValue<String> {
