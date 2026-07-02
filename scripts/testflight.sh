@@ -45,7 +45,8 @@ xcodegen generate >/dev/null
 SETTINGS="$(xcodebuild -project "$PROJECT" -scheme "$SCHEME" -showBuildSettings 2>/dev/null)"
 VERSION="$(printf '%s\n' "$SETTINGS" | awk -F' = ' '/ MARKETING_VERSION = /{print $2; exit}')"
 BUILD="$(printf '%s\n' "$SETTINGS" | awk -F' = ' '/ CURRENT_PROJECT_VERSION = /{print $2; exit}')"
-echo "==> Enviando ${SCHEME} ${VERSION} (${BUILD})"
+GIT_COMMIT="$(git rev-parse --short=8 HEAD 2>/dev/null || echo dev)"
+echo "==> Enviando ${SCHEME} ${VERSION} (${BUILD}) — commit ${GIT_COMMIT}"
 
 ARCH_DIR="$HOME/Library/Developer/Xcode/Archives/$(date +%Y-%m-%d)"
 mkdir -p "$ARCH_DIR"
@@ -58,6 +59,7 @@ xcodebuild -project "$PROJECT" -scheme "$SCHEME" \
   -destination 'generic/platform=iOS' \
   -archivePath "$ARCH_PATH" \
   -allowProvisioningUpdates \
+  GIT_COMMIT="$GIT_COMMIT" \
   archive
 
 echo "==> Exportando e enviando ao App Store Connect"

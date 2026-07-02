@@ -16,11 +16,24 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.4"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "15"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.5"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "16"
         return "\(version) (Build \(build))"
     }
     
+    // Hash do commit que gerou este build (injetado via GIT_COMMIT no build).
+    var currentCommit: String {
+        let commit = Bundle.main.infoDictionary?["GitCommit"] as? String ?? "dev"
+        return commit.isEmpty ? "dev" : commit
+    }
+
+    // URL do commit no GitHub (nil quando build local sem hash, ex.: "dev").
+    var commitURL: URL? {
+        let commit = currentCommit
+        guard commit != "dev" else { return nil }
+        return URL(string: "https://github.com/eggerjunior/Hermes_Voice/commit/\(commit)")
+    }
+
     // Lê dinamicamente a data e hora em que o aplicativo foi compilado no Mac
     var currentBuildDateString: String {
         let formatter = DateFormatter()
@@ -43,6 +56,16 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.2.5",
+            build: "16",
+            date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "Hash do commit exibido no rodapé, com link para abrir o commit no GitHub (navegador padrão).",
+                "Commit também registrado no Log do Agente ao conectar."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.2.4",
             build: "15",
             date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
@@ -50,7 +73,7 @@ class VersionManager {
                 "Resposta mais ágil: fala incremental — começa a narrar assim que a primeira frase fica pronta, sem esperar a resposta inteira.",
                 "Tempo de silêncio do reconhecimento reduzido de 1,2s para 0,8s."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.2.3",

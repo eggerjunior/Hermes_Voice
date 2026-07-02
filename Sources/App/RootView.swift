@@ -157,11 +157,28 @@ struct RootView: View {
                     
                     Spacer()
                     
-                    // Exibição da versão atual e data de build
-                    Text("v\(VersionManager.shared.currentVersionString) — \(VersionManager.shared.currentBuildDateString)")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                        .padding(.bottom, 4)
+                    // Exibição da versão atual, data de build e commit (link p/ o GitHub)
+                    VStack(spacing: 2) {
+                        Text("v\(VersionManager.shared.currentVersionString) — \(VersionManager.shared.currentBuildDateString)")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+
+                        if let commitURL = VersionManager.shared.commitURL {
+                            Link(destination: commitURL) {
+                                HStack(spacing: 3) {
+                                    Image(systemName: "arrow.up.right.square")
+                                    Text("commit \(VersionManager.shared.currentCommit)")
+                                }
+                                .font(.caption2)
+                                .foregroundColor(.blue)
+                            }
+                        } else {
+                            Text("commit \(VersionManager.shared.currentCommit)")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.bottom, 4)
                 }
                 .padding()
             }

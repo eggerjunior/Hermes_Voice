@@ -6,11 +6,13 @@ options:
   createIntermediateGroups: true
 settings:
   base:
-    MARKETING_VERSION: "1.2.4"
-    CURRENT_PROJECT_VERSION: "15"
+    MARKETING_VERSION: "1.2.5"
+    CURRENT_PROJECT_VERSION: "16"
     SWIFT_VERSION: "5.0"
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: E743636TCJ
+    # Hash do commit; sobrescrito no build via xcodebuild GIT_COMMIT=... (fallback "dev")
+    GIT_COMMIT: dev
 targets:
   HermesVoice:
     type: application
@@ -24,6 +26,7 @@ targets:
         NSMicrophoneUsageDescription: "Para conversar por voz com o Hermes."
         NSSpeechRecognitionUsageDescription: "Para transcrever sua fala durante a conversa."
         ITSAppUsesNonExemptEncryption: false
+        GitCommit: "$(GIT_COMMIT)"
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIBackgroundModes: [audio, voip]
         CFBundleShortVersionString: "$(MARKETING_VERSION)"

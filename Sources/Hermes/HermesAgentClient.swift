@@ -114,6 +114,7 @@ class HermesAgentClient: NSObject, HermesAgentClientProtocol {
         }
 
         appendLog("--- HERMES API SERVER (OpenAI-compatível) ---")
+        appendLog("Build: v\(VersionManager.shared.currentVersionString) — commit \(VersionManager.shared.currentCommit)")
 
         var request = try authorizedRequest(path: "/health")
         request.httpMethod = "GET"
