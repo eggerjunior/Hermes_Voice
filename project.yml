@@ -1,0 +1,34 @@
+name: HermesVoice
+options:
+  bundleIdPrefix: br.app.egger
+  deploymentTarget:
+    iOS: "26.5"
+  createIntermediateGroups: true
+settings:
+  base:
+    MARKETING_VERSION: "1.1.0"
+    CURRENT_PROJECT_VERSION: "7"
+    SWIFT_VERSION: "5.0"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: E743636TCJ
+targets:
+  HermesVoice:
+    type: application
+    platform: iOS
+    sources: [Sources]
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: Hermes
+        UILaunchScreen: {}
+        NSMicrophoneUsageDescription: "Para conversar por voz com o Hermes."
+        NSSpeechRecognitionUsageDescription: "Para transcrever sua fala durante a conversa."
+        UIBackgroundModes: [audio, voip]
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundleIconName: AppIcon
+    settings:
+      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    entitlements:
+      path: Sources/HermesVoice.entitlements
+      properties: {}
