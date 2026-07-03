@@ -171,6 +171,34 @@ class HermesAgentClient: NSObject, HermesAgentClientProtocol, @unchecked Sendabl
         }
     }
 
+    struct ModelInfo {
+        let model: String
+        let provider: String
+    }
+
+    /// Consulta o modelo e o motor (provider) LLM configurados no servidor, via a rota
+    /// de diagnóstico `/admin/model-info` (nginx repassa para o dashboard do Hermes,
+    /// autenticado pela mesma API Key — o app nunca vê a credencial do dashboard).
+    func fetchModelInfo() async throws -> ModelInfo {
+        var request = try authorizedRequest(path: "/admin/model-info")
+        request.httpMethod = "GET"
+        request.timeoutInterval = 10
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            let code = (response as? HTTPURLResponse)?.statusCode ?? -1
+            throw NSError(domain: "HermesAgentClient", code: code,
+                          userInfo: [NSLocalizedDescriptionKey: "Não foi possível obter informações do modelo (HTTP \(code))."])
+        }
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let model = json["model"] as? String, !model.isEmpty,
+              let provider = json["provider"] as? String, !provider.isEmpty else {
+            throw NSError(domain: "HermesAgentClient", code: -2,
+                          userInfo: [NSLocalizedDescriptionKey: "Resposta de modelo vazia ou inesperada."])
+        }
+        return ModelInfo(model: model, provider: provider)
+    }
+
     func resetConversation() async {
         // Trocar o id de sessão faz o servidor tratar como uma nova conversa.
         sessionId = UUID().uuidString

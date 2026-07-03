@@ -118,9 +118,17 @@ struct SettingsView: View {
         Task {
             do {
                 try await HermesAgentClient.shared.connect()
+
+                // A falha em obter o modelo/motor não invalida o teste de conexão —
+                // é uma informação extra de diagnóstico, não um requisito de saúde.
+                var modelLine = ""
+                if let info = try? await HermesAgentClient.shared.fetchModelInfo() {
+                    modelLine = "\nModelo: \(info.model)\nMotor: \(info.provider)"
+                }
+
                 await MainActor.run {
                     testSucceeded = true
-                    testResult = "Conectado ao API server com sucesso."
+                    testResult = "Conectado ao API server com sucesso." + modelLine
                     isTesting = false
                 }
                 await HermesAgentClient.shared.disconnect()

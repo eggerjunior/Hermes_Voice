@@ -16,8 +16,8 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.10"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "21"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.11"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "22"
         return "\(version) (Build \(build))"
     }
     
@@ -56,15 +56,24 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.2.11",
+            build: "22",
+            date: "03/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "Testar conexão agora mostra o modelo e o motor (provider) LLM configurados no servidor."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.2.10",
             build: "21",
-            date: "02/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            date: "02/07/2026 00:00:00",
             changes: [
                 "Atalho/Siri volta a funcionar: revertido para abrir o app ao iniciar (openAppWhenRun=true), como na versão original. O erro 6 vinha de rodar em background (limitação do iOS).",
                 "Removido ajuste inútil de maximumCallGroups (baseado em diagnóstico incorreto).",
                 "Hands-free 100% na tela bloqueada segue pendente da entitlement de CarPlay Communication."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.2.9",
