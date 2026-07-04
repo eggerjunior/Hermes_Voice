@@ -17,7 +17,7 @@ class SpeechRecognizer {
     weak var delegate: SpeechRecognizerDelegate?
     
     private var silenceTimer: Timer?
-    private let silenceDuration: TimeInterval = 0.8
+    private let silenceDuration: TimeInterval = 1.2
     
     private var isListening = false
     private var lastRecognizedText = ""

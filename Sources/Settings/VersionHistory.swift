@@ -16,8 +16,8 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.11"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "22"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.12"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "23"
         return "\(version) (Build \(build))"
     }
     
@@ -56,13 +56,22 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.2.12",
+            build: "23",
+            date: "04/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "Tempo de silêncio do reconhecimento revertido de 0,8s para 1,2s — 0,8s cortava a fala antes de pausas naturais."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.2.11",
             build: "22",
-            date: "03/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            date: "03/07/2026 00:00:00",
             changes: [
                 "Testar conexão agora mostra o modelo e o motor (provider) LLM configurados no servidor."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.2.10",
