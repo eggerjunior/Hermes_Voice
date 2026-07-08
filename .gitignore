@@ -16,3 +16,6 @@ xcuserdata/
 # App Store Connect API (segredos — NUNCA versionar)
 scripts/asc.env
 *.p8
+
+# Documento de handoff (contém segredos — nunca versionar)
+HANDOFF.md

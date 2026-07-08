@@ -176,27 +176,47 @@ class HermesAgentClient: NSObject, HermesAgentClientProtocol, @unchecked Sendabl
         let provider: String
     }
 
-    /// Consulta o modelo e o motor (provider) LLM configurados no servidor, via a rota
-    /// de diagnóstico `/admin/model-info` (nginx repassa para o dashboard do Hermes,
-    /// autenticado pela mesma API Key — o app nunca vê a credencial do dashboard).
+    /// Consulta o modelo e o motor (provider) LLM configurados no servidor.
+    /// Builds diferentes do gateway ja expuseram essa informacao em rotas/campos
+    /// diferentes; por isso tentamos os endpoints de diagnostico primeiro e caimos
+    /// para rotas OpenAI-compativeis quando necessario.
     func fetchModelInfo() async throws -> ModelInfo {
-        var request = try authorizedRequest(path: "/admin/model-info")
-        request.httpMethod = "GET"
-        request.timeoutInterval = 10
+        let paths = [
+            "/admin/model-info",
+            "/model-info",
+            "/v1/model-info",
+            "/health",
+            "/v1/health",
+            "/v1/models"
+        ]
 
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
-            let code = (response as? HTTPURLResponse)?.statusCode ?? -1
-            throw NSError(domain: "HermesAgentClient", code: code,
-                          userInfo: [NSLocalizedDescriptionKey: "Não foi possível obter informações do modelo (HTTP \(code))."])
+        var lastStatusCode = -1
+        for path in paths {
+            var request = try authorizedRequest(path: path)
+            request.httpMethod = "GET"
+            request.timeoutInterval = 10
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse else {
+                continue
+            }
+            lastStatusCode = http.statusCode
+
+            guard (200...299).contains(http.statusCode) else {
+                appendLog("Info de modelo indisponivel em \(path) (HTTP \(http.statusCode)).")
+                continue
+            }
+
+            if let info = Self.extractModelInfo(from: data) {
+                appendLog("Modelo: \(info.model) | Motor: \(info.provider)")
+                return info
+            }
+
+            appendLog("Info de modelo inesperada em \(path).")
         }
-        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let model = json["model"] as? String, !model.isEmpty,
-              let provider = json["provider"] as? String, !provider.isEmpty else {
-            throw NSError(domain: "HermesAgentClient", code: -2,
-                          userInfo: [NSLocalizedDescriptionKey: "Resposta de modelo vazia ou inesperada."])
-        }
-        return ModelInfo(model: model, provider: provider)
+
+        throw NSError(domain: "HermesAgentClient", code: lastStatusCode,
+                      userInfo: [NSLocalizedDescriptionKey: "Não foi possível obter informações do modelo."])
     }
 
     func resetConversation() async {
@@ -321,6 +341,92 @@ class HermesAgentClient: NSObject, HermesAgentClientProtocol, @unchecked Sendabl
         return toolCalls.compactMap { call in
             (call["function"] as? [String: Any])?["name"] as? String
         }.filter { !$0.isEmpty }
+    }
+
+    /// Extrai modelo/motor de respostas de diagnostico do Hermes ou de `/v1/models`.
+    private static func extractModelInfo(from data: Data) -> ModelInfo? {
+        guard let json = try? JSONSerialization.jsonObject(with: data) else {
+            return nil
+        }
+
+        if let object = json as? [String: Any] {
+            if let info = extractModelInfo(from: object) {
+                return info
+            }
+
+            if let models = object["data"] as? [[String: Any]] {
+                for modelObject in models {
+                    if let model = firstString(in: modelObject, keys: modelKeys) {
+                        let provider = firstString(in: modelObject, keys: providerKeys) ?? "OpenAI-compatível"
+                        return ModelInfo(model: model, provider: provider)
+                    }
+                }
+            }
+        }
+
+        if let models = json as? [[String: Any]] {
+            for modelObject in models {
+                if let model = firstString(in: modelObject, keys: modelKeys) {
+                    let provider = firstString(in: modelObject, keys: providerKeys) ?? "OpenAI-compatível"
+                    return ModelInfo(model: model, provider: provider)
+                }
+            }
+        }
+
+        return nil
+    }
+
+    private static let modelKeys = [
+        "model",
+        "model_name",
+        "modelName",
+        "llm_model",
+        "llmModel",
+        "default_model",
+        "defaultModel",
+        "id",
+        "name"
+    ]
+
+    private static let providerKeys = [
+        "provider",
+        "model_provider",
+        "modelProvider",
+        "llm_provider",
+        "llmProvider",
+        "engine",
+        "motor",
+        "backend",
+        "owned_by",
+        "ownedBy"
+    ]
+
+    private static func extractModelInfo(from object: [String: Any]) -> ModelInfo? {
+        if let model = firstString(in: object, keys: modelKeys),
+           let provider = firstString(in: object, keys: providerKeys) {
+            return ModelInfo(model: model, provider: provider)
+        }
+
+        for value in object.values {
+            if let nested = value as? [String: Any],
+               let info = extractModelInfo(from: nested) {
+                return info
+            }
+        }
+
+        return nil
+    }
+
+    private static func firstString(in object: [String: Any], keys: [String]) -> String? {
+        for key in keys {
+            if let value = object[key] as? String {
+                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty {
+                    return trimmed
+                }
+            }
+        }
+        return nil
     }
 
     private func httpError(_ statusCode: Int, data: Data?) -> NSError {
