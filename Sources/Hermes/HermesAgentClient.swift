@@ -208,6 +208,10 @@ class HermesAgentClient: NSObject, HermesAgentClientProtocol, @unchecked Sendabl
             }
 
             if let info = Self.extractModelInfo(from: data) {
+                if Self.isGatewayPlaceholder(info) {
+                    appendLog("Info de modelo generica ignorada em \(path): \(info.model)/\(info.provider).")
+                    continue
+                }
                 appendLog("Modelo: \(info.model) | Motor: \(info.provider)")
                 return info
             }
@@ -427,6 +431,12 @@ class HermesAgentClient: NSObject, HermesAgentClientProtocol, @unchecked Sendabl
             }
         }
         return nil
+    }
+
+    private static func isGatewayPlaceholder(_ info: ModelInfo) -> Bool {
+        let model = info.model.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let provider = info.provider.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return model == "hermes-agent" && provider == "hermes"
     }
 
     private func httpError(_ statusCode: Int, data: Data?) -> NSError {
