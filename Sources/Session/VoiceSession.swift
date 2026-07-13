@@ -26,6 +26,7 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
     
     private var cancellables = Set<AnyCancellable>()
     private var accumulatedResponse = ""
+    private var lastPrompt = ""
     
     private init() {
         // Sincroniza o status de conexão com a UI
@@ -72,7 +73,14 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
             self.isCallActive = true
             self.errorMessage = nil
             self.currentTranscript = ""
+            self.hermesResponse = ""
+            self.lastPrompt = ""
         }
+        HermesLiveActivityController.start(
+            status: "Conectando",
+            prompt: "Chamada Hermes Voice ativa.",
+            response: "Preparando microfone e conexão com o Hermes."
+        )
         
         SpeechRecognizer.shared.configure(localeIdentifier: settings.sttLanguage)
         SpeechSynthesizer.shared.configureVoice(locale: settings.sttLanguage)
@@ -110,6 +118,11 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
                 DispatchQueue.main.async {
                     self.sessionState = .listening
                 }
+                updateLiveActivity(
+                    status: "Ouvindo",
+                    prompt: "Fale com o Hermes.",
+                    response: "Áudio roteado pela chamada do sistema."
+                )
             } catch {
                 print("Erro ao iniciar AVAudioEngine ou SpeechRecognizer: \(error.localizedDescription)")
                 DispatchQueue.main.async {
@@ -127,6 +140,7 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
         
         Task {
             await HermesAgentClient.shared.disconnect()
+            await HermesLiveActivityController.end()
         }
         
         DispatchQueue.main.async {
@@ -134,6 +148,8 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
             self.isCallActive = false
             self.isMuted = false
             self.currentTranscript = ""
+            self.hermesResponse = ""
+            self.lastPrompt = ""
         }
     }
 }
@@ -192,15 +208,26 @@ extension VoiceSession: SpeechRecognizerDelegate {
         DispatchQueue.main.async {
             self.currentTranscript = text
         }
+        updateLiveActivity(
+            status: "Ouvindo",
+            prompt: text.isEmpty ? "Fale com o Hermes." : text,
+            response: "Transcrevendo sua fala."
+        )
     }
     
     func speechRecognizerDidDetectSilence(withText text: String) {
         print("Silêncio detectado. Enviando texto final: \(text)")
+        lastPrompt = text
         
         DispatchQueue.main.async {
             self.sessionState = .processing
             self.currentTranscript = text
         }
+        updateLiveActivity(
+            status: "Processando",
+            prompt: text,
+            response: "Hermes está preparando a resposta."
+        )
         
         // Pausa reconhecimento para evitar eco e capturar resposta
         SpeechRecognizer.shared.stopRecording()
@@ -224,6 +251,11 @@ extension VoiceSession: SpeechRecognizerDelegate {
                     // Atualiza a transcrição da resposta ao vivo, conforme os tokens chegam
                     let current = accumulatedResponse
                     DispatchQueue.main.async { self.hermesResponse = current }
+                    updateLiveActivity(
+                        status: "Respondendo",
+                        prompt: text,
+                        response: current
+                    )
 
                     // Enfileira as frases completas para fala imediata
                     buffer += chunk
@@ -247,6 +279,11 @@ extension VoiceSession: SpeechRecognizerDelegate {
                     self.sessionState = .listening
                     try? SpeechRecognizer.shared.startRecording()
                 }
+                updateLiveActivity(
+                    status: "Ouvindo",
+                    prompt: "Fale com o Hermes.",
+                    response: "Não foi possível completar a última resposta."
+                )
             }
         }
     }
@@ -275,6 +312,16 @@ extension VoiceSession: SpeechRecognizerDelegate {
         }
         return nil
     }
+
+    private func updateLiveActivity(status: String, prompt: String, response: String) {
+        Task {
+            await HermesLiveActivityController.update(
+                status: status,
+                prompt: prompt,
+                response: response
+            )
+        }
+    }
 }
 
 // MARK: - SpeechSynthesizerDelegate
@@ -284,6 +331,11 @@ extension VoiceSession: SpeechSynthesizerDelegate {
             self.sessionState = .speaking
             self.currentTranscript = ""
         }
+        updateLiveActivity(
+            status: "Falando",
+            prompt: lastPrompt.isEmpty ? "Hermes Voice" : lastPrompt,
+            response: hermesResponse.isEmpty ? "Hermes está falando." : hermesResponse
+        )
         SpeechRecognizer.shared.stopRecording()
     }
     
@@ -291,6 +343,11 @@ extension VoiceSession: SpeechSynthesizerDelegate {
         DispatchQueue.main.async {
             self.sessionState = .listening
         }
+        updateLiveActivity(
+            status: "Ouvindo",
+            prompt: "Fale com o Hermes.",
+            response: hermesResponse.isEmpty ? "Pronto para o próximo comando." : hermesResponse
+        )
         // Retorna a ouvir o microfone após o término da fala do Hermes, caso não esteja mutado
         if !isMuted {
             try? SpeechRecognizer.shared.startRecording()

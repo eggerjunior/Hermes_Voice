@@ -6,8 +6,8 @@ options:
   createIntermediateGroups: true
 settings:
   base:
-    MARKETING_VERSION: "1.2.14"
-    CURRENT_PROJECT_VERSION: "25"
+    MARKETING_VERSION: "1.3.0"
+    CURRENT_PROJECT_VERSION: "26"
     SWIFT_VERSION: "5.0"
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: E743636TCJ
@@ -17,7 +17,9 @@ targets:
   HermesVoice:
     type: application
     platform: iOS
-    sources: [Sources]
+    sources:
+      - path: Sources
+      - path: Shared
     info:
       path: Sources/Info.plist
       properties:
@@ -25,8 +27,13 @@ targets:
         UILaunchScreen: {}
         NSMicrophoneUsageDescription: "Para conversar por voz com o Hermes."
         NSSpeechRecognitionUsageDescription: "Para transcrever sua fala durante a conversa."
+        NSSupportsLiveActivities: true
         ITSAppUsesNonExemptEncryption: false
         GitCommit: "$(GIT_COMMIT)"
+        CFBundleURLTypes:
+          - CFBundleURLName: br.app.egger.hermesvoice
+            CFBundleURLSchemes:
+              - hermesvoice
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIBackgroundModes: [audio, voip]
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
@@ -34,7 +41,29 @@ targets:
         CFBundleIconName: AppIcon
     settings:
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      PRODUCT_BUNDLE_IDENTIFIER: br.app.egger.hermesvoice
+      INFOPLIST_FILE: Sources/Info.plist
       TARGETED_DEVICE_FAMILY: "1"
+    dependencies:
+      - target: HermesVoiceWidgets
+        embed: true
     entitlements:
       path: Sources/HermesVoice.entitlements
       properties: {}
+  HermesVoiceWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Widgets
+      - path: Shared
+    info:
+      path: Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: Hermes Voice
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: br.app.egger.hermesvoice.widgets
+      INFOPLIST_FILE: Widgets/Info.plist

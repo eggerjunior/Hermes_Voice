@@ -16,8 +16,8 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.14"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "25"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.3.0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "26"
         return "\(version) (Build \(build))"
     }
     
@@ -56,13 +56,24 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.3.0",
+            build: "26",
+            date: "13/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "Adicionada extensão WidgetKit do Hermes Voice com widget de status rápido.",
+                "Adicionada Live Activity/Dynamic Island para acompanhar a chamada e a resposta do Hermes.",
+                "Mantida a integração CarPlay sem entitlement via CallKit, exibindo o Hermes como chamada do sistema no carro."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.2.14",
             build: "25",
             date: "08/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
             changes: [
                 "Teste de conexão ignora o placeholder hermes-agent/hermes e mostra apenas o modelo real ativo no Hermes."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.2.13",

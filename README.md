@@ -1,8 +1,15 @@
-# Hermes Voice 🎙️
+# Hermes Voice
 
-Aplicativo iOS nativo escrito em **Swift + SwiftUI** que permite conversar por voz com o agente self-hosted **Hermes** via WebSocket (WSS) com Basic Auth. 
+Aplicativo iOS nativo escrito em **Swift + SwiftUI** que permite conversar por voz com o agente self-hosted **Hermes** via API HTTPS com streaming.
 
 A conversa é modelada como uma **ligação virtual via CallKit**. Isso permite que, ao conectar o iPhone ao carro, o **CarPlay exiba automaticamente a interface nativa de chamadas**, roteando microfone e alto-falantes pelo sistema do veículo sem precisar de entitlements restritos de CarPlay ou aprovação da Apple.
+
+Além da chamada CallKit, o app também tem uma extensão **WidgetKit** inspirada no Jarvis:
+- widget de status rápido para iPhone;
+- Live Activity/Dynamic Island com status da sessão, última fala do usuário e resposta do Hermes;
+- URL scheme `hermesvoice://activity` para abrir o app a partir da Live Activity.
+
+Observação importante: o iOS não permite um widget arbitrário dentro do CarPlay sem entitlement de categoria aprovada pela Apple. Até o entitlement sair, o caminho funcional é este: **CarPlay vê o Hermes como chamada do sistema via CallKit**, enquanto o iPhone mostra o widget/Live Activity.
 
 ---
 
@@ -50,7 +57,7 @@ Como o app precisa ser executado em um **iPhone real** para usar o CallKit e tes
 
 ---
 
-## 🚗 Testando no CarPlay (Sem Fio ou Com Fio)
+## Testando no CarPlay (Sem Fio ou Com Fio)
 
 1. Entre no veículo e conecte o iPhone ao CarPlay.
 2. Com o app **Hermes Voice** aberto ou em segundo plano, inicie a conversa:
@@ -62,41 +69,30 @@ Como o app precisa ser executado em um **iPhone real** para usar o CallKit e tes
 
 ---
 
-## 🔌 Integração do WebSocket com o Hermes
+## Widget e Live Activity
 
-A comunicação WebSocket é gerenciada nativamente no arquivo [HermesAgentClient.swift](file:///Users/ildemareggerjunior/Projects/Hermes_Voice/Sources/Hermes/HermesAgentClient.swift).
+1. Gere o projeto com `xcodegen generate`.
+2. Abra `HermesVoice.xcodeproj` e confirme que existem dois targets:
+   - `HermesVoice`
+   - `HermesVoiceWidgets`
+3. Rode no iPhone físico.
+4. Adicione o widget "Hermes Voice" na Tela de Início ou Tela Bloqueada.
+5. Ao iniciar uma chamada Hermes, a Live Activity acompanha os estados "Conectando", "Ouvindo", "Processando", "Respondendo" e "Falando".
+
+---
+
+## Integração da API com o Hermes
+
+A comunicação com o API server é gerenciada nativamente no arquivo [HermesAgentClient.swift](file:///Users/ildemareggerjunior/Projects/Hermes_Voice/Sources/Hermes/HermesAgentClient.swift).
 
 ### Configurações na UI:
 Abra o app no iPhone e toque no ícone de engrenagem no canto superior direito para acessar a tela de configurações:
-- **URL do WebSocket:** Defina o endpoint (ex: `wss://dashboard.egger.app.br/voice`).
-- **Usuário e Senha:** Salvados de forma criptografada no Keychain do aparelho.
+- **URL da API:** Defina o endpoint base (ex: `https://api.egger.app.br`).
+- **API Key:** Salva de forma criptografada no Keychain do aparelho.
 - **Idioma do STT:** Padrão `pt-BR`.
 - **Velocidade de Voz (TTS):** Slider para controle de velocidade de fala do Hermes.
 
-### Customização do JSON (AÇÃO MINHA):
-O protocolo padrão implementado assume as seguintes payloads. Se o seu servidor do Hermes usar chaves diferentes, edite as seções correspondentes indicadas por `TODO` em [HermesAgentClient.swift](file:///Users/ildemareggerjunior/Projects/Hermes_Voice/Sources/Hermes/HermesAgentClient.swift):
-
-* **Envio de Fala (Usuário):**
-  ```json
-  {
-    "type": "user_message",
-    "text": "Texto transcrito aqui"
-  }
-  ```
-* **Recebimento de Resposta (Hermes - Streaming ou Fim de Resposta):**
-  ```json
-  // Formato estruturado esperado:
-  {
-    "type": "token",
-    "text": "palavra "
-  }
-  
-  // Ou sinalizador de fim de transmissão:
-  {
-    "type": "done"
-  }
-  ```
-  *Nota: Se o servidor enviar apenas texto puro (raw strings), a classe está programada para aceitar e acumular as strings diretamente.*
+O fluxo envia as falas transcritas para `/v1/chat/completions`, recebe resposta por streaming e fala incrementalmente as frases completas para reduzir a latência percebida.
 
 ---
 
@@ -106,6 +102,7 @@ O código-fonte está dividido sob o diretório `Sources/`:
 - **App/**
   - [HermesVoiceApp.swift](file:///Users/ildemareggerjunior/Projects/Hermes_Voice/Sources/App/HermesVoiceApp.swift): Inicialização da UI.
   - [RootView.swift](file:///Users/ildemareggerjunior/Projects/Hermes_Voice/Sources/App/RootView.swift): Painel principal de controle da chamada, animações e feedback visual.
+  - [HermesLiveActivityController.swift](file:///Users/ildemareggerjunior/Projects/Hermes_Voice/Sources/App/HermesLiveActivityController.swift): Controla a Live Activity durante a sessão de voz.
 - **Call/**
   - [CallManager.swift](file:///Users/ildemareggerjunior/Projects/Hermes_Voice/Sources/Call/CallManager.swift): Gerenciamento da ligação virtual usando CallKit (CXProvider). Garante que a ativação da `AVAudioSession` é feita pelo sistema no momento certo.
 - **Audio/**
@@ -123,3 +120,7 @@ O código-fonte está dividido sob o diretório `Sources/`:
   - [SettingsStore.swift](file:///Users/ildemareggerjunior/Projects/Hermes_Voice/Sources/Settings/SettingsStore.swift): Persistência em UserDefaults.
   - [KeychainStore.swift](file:///Users/ildemareggerjunior/Projects/Hermes_Voice/Sources/Settings/KeychainStore.swift): Criptografia de senhas no Keychain.
   - [SettingsView.swift](file:///Users/ildemareggerjunior/Projects/Hermes_Voice/Sources/Settings/SettingsView.swift): UI de configurações.
+- **Shared/**
+  - [HermesLiveActivityAttributes.swift](file:///Users/ildemareggerjunior/Projects/Hermes_Voice/Shared/HermesLiveActivityAttributes.swift): Modelo compartilhado entre app e extensão WidgetKit.
+- **Widgets/**
+  - [HermesVoiceWidgets.swift](file:///Users/ildemareggerjunior/Projects/Hermes_Voice/Widgets/HermesVoiceWidgets.swift): Widget de status rápido e Live Activity/Dynamic Island.
