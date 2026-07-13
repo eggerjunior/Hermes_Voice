@@ -44,6 +44,7 @@
     "Sources/App/HermesLiveActivityController.swift",
     "Sources/Session/VoiceSession.swift",
     "Widgets/HermesVoiceWidgets.swift",
+    "scripts/create_app.py",
     "scripts/testflight.sh"
   ],
   "screenshots": [],

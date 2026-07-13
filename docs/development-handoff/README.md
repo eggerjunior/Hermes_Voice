@@ -30,6 +30,7 @@ This folder is the portable project handoff for humans and AI development tools.
 - `Sources/App/HermesLiveActivityController.swift`
 - `Sources/Session/VoiceSession.swift`
 - `Widgets/HermesVoiceWidgets.swift`
+- `scripts/create_app.py`
 - `scripts/testflight.sh`
 
 
