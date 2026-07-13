@@ -116,7 +116,7 @@ Physical iPhone is required to validate CallKit audio, microphone permissions, L
 - A true custom CarPlay app/widget still requires Apple entitlement approval. Current workaround is CallKit on CarPlay plus iPhone WidgetKit/Live Activity.
 - Live Activity updates during long streaming responses should be tested on device for frequency/throttling behavior.
 - Screenshots of the widget, Live Activity and CarPlay call UI still need to be captured on a physical device.
-- TestFlight upload for version `1.3.0` build `26` was retried after aligning the bundle identifier with the existing App Store Connect record: `br.app.egger.HermesVoice`.
+- TestFlight upload for version `1.3.0` build `26` succeeded after aligning the bundle identifier with the existing App Store Connect record: `br.app.egger.HermesVoice`. App Store Connect reported the uploaded package is processing.
 
 ## Import Notes For Other Tools
 
