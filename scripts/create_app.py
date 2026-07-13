@@ -9,9 +9,9 @@ import urllib.request
 
 import jwt
 
-BUNDLE_ID = "br.app.egger.hermesvoice"
+BUNDLE_ID = "br.app.egger.HermesVoice"
 APP_NAME = "Hermes Voice"
-SKU = "br.app.egger.hermesvoice"
+SKU = "br.app.egger.HermesVoice"
 PRIMARY_LOCALE = "pt-BR"
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

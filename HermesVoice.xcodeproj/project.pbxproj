@@ -346,7 +346,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = br.app.egger.hermesvoice;
+				PRODUCT_BUNDLE_IDENTIFIER = br.app.egger.HermesVoice;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -361,7 +361,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = br.app.egger.hermesvoice.widgets;
+				PRODUCT_BUNDLE_IDENTIFIER = br.app.egger.HermesVoice.widgets;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -378,7 +378,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = br.app.egger.hermesvoice;
+				PRODUCT_BUNDLE_IDENTIFIER = br.app.egger.HermesVoice;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -461,7 +461,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = br.app.egger.hermesvoice.widgets;
+				PRODUCT_BUNDLE_IDENTIFIER = br.app.egger.HermesVoice.widgets;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

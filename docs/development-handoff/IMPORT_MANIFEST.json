@@ -26,7 +26,7 @@
     "version": "1.3.0",
     "build": "26",
     "git_commit_fallback": "dev",
-    "bundle_id": "br.app.egger.hermesvoice",
+    "bundle_id": "br.app.egger.HermesVoice",
     "development_team": "E743636TCJ"
   },
   "documentation": [

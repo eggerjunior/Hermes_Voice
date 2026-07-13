@@ -41,7 +41,7 @@ targets:
         CFBundleIconName: AppIcon
     settings:
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-      PRODUCT_BUNDLE_IDENTIFIER: br.app.egger.hermesvoice
+      PRODUCT_BUNDLE_IDENTIFIER: br.app.egger.HermesVoice
       INFOPLIST_FILE: Sources/Info.plist
       TARGETED_DEVICE_FAMILY: "1"
     dependencies:
@@ -65,5 +65,5 @@ targets:
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
-      PRODUCT_BUNDLE_IDENTIFIER: br.app.egger.hermesvoice.widgets
+      PRODUCT_BUNDLE_IDENTIFIER: br.app.egger.HermesVoice.widgets
       INFOPLIST_FILE: Widgets/Info.plist
