@@ -1,6 +1,6 @@
 # Development Handoff: Hermes_Voice
 
-Generated: 2026-07-17T16:53:45-03:00
+Generated: 2026-07-17T18:48:12-03:00
 
 This folder is the portable project handoff for humans and AI development tools.
 
@@ -16,9 +16,9 @@ This folder is the portable project handoff for humans and AI development tools.
 
 - Project: `Hermes_Voice`
 - Branch: `main`
-- Commit: `3f4b524d`
-- Version: `1.4.1`
-- Build: `28`
+- Commit: `c95bee13`
+- Version: `1.6.0`
+- Build: `31`
 - Repo: `https://github.com/eggerjunior/Hermes_Voice.git`
 
 ## Key Files

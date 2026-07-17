@@ -24,7 +24,8 @@ class SpeechSynthesizer: NSObject, @unchecked Sendable {
     private override init() {
         super.init()
         self.synthesizer.delegate = self
-        // REGRA DE OURO: reproduz através da rota de áudio da chamada do CallKit
+        // REGRA DE OURO: reproduz através da sessão de áudio do app (compartilhada com a
+        // gravação), em vez de ativar a sessão de playback padrão do sistema.
         self.synthesizer.usesApplicationAudioSession = true
         configureVoice()
     }

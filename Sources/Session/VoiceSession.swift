@@ -47,7 +47,6 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
             .store(in: &cancellables)
         
         // Define as dependências cruzadas
-        CallManager.shared.delegate = self
         AudioEngineManager.shared.delegate = self
         SpeechRecognizer.shared.delegate = self
         SpeechSynthesizer.shared.delegate = self
@@ -57,7 +56,9 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
 
     // MARK: - Ações Públicas
     func startCall() {
-        CallManager.shared.startCall()
+        guard !isCallActive else { return }
+        activateAudioSession()
+        startAudioAndAgent()
     }
 
     /// Consulta o modelo/motor ativo no servidor para exibir na tela principal.
@@ -69,15 +70,52 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
             }
         }
     }
-    
+
     func endCall() {
-        CallManager.shared.endCall()
+        guard isCallActive else { return }
+        stopAudioAndAgent()
+        deactivateAudioSession()
     }
-    
+
     func toggleMute() {
-        CallManager.shared.setMuted(!isMuted)
+        isMuted.toggle()
+        if isMuted {
+            SpeechRecognizer.shared.stopRecording()
+        } else if sessionState == .listening {
+            try? SpeechRecognizer.shared.startRecording()
+        }
     }
-    
+
+    /// Ativa a sessão de áudio direto (sem CallKit — igual ao Jarvis), para não
+    /// aparecer como "chamada telefônica" na tela de bloqueio/CarPlay. `.voiceChat`
+    /// habilita o cancelamento de eco do sistema; `.defaultToSpeaker` dá viva-voz como
+    /// padrão, mas ainda respeita fones/Bluetooth/carro quando conectados.
+    private func activateAudioSession() {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(
+                .playAndRecord,
+                mode: .voiceChat,
+                options: [.defaultToSpeaker, .allowBluetoothHFP, .allowBluetoothA2DP, .duckOthers]
+            )
+            try session.setActive(true, options: .notifyOthersOnDeactivation)
+
+            let externalPorts: [AVAudioSession.Port] = [
+                .headphones, .bluetoothA2DP, .bluetoothHFP, .bluetoothLE, .carAudio, .usbAudio
+            ]
+            let hasExternalOutput = session.currentRoute.outputs.contains { externalPorts.contains($0.portType) }
+            if !hasExternalOutput {
+                try? session.overrideOutputAudioPort(.speaker)
+            }
+        } catch {
+            errorMessage = "Erro ao ativar a sessão de áudio: \(error.localizedDescription)"
+        }
+    }
+
+    private func deactivateAudioSession() {
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
     // MARK: - Ciclo de Vida da Ligação
     private func startAudioAndAgent() {
         let settings = SettingsStore.shared
@@ -164,43 +202,6 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
             self.currentTranscript = ""
             self.hermesResponse = ""
             self.lastPrompt = ""
-        }
-    }
-}
-
-// MARK: - CallManagerDelegate
-extension VoiceSession: CallManagerDelegate {
-    func callManagerDidActivateAudio() {
-        startAudioAndAgent()
-    }
-    
-    func callManagerDidDeactivateAudio() {
-        stopAudioAndAgent()
-    }
-    
-    func callManagerDidEndCall() {
-        stopAudioAndAgent()
-    }
-    
-    func callManagerDidFail(withError error: Error) {
-        DispatchQueue.main.async {
-            self.errorMessage = "Falha no CallKit: \(error.localizedDescription)"
-            self.isCallActive = false
-            self.sessionState = .idle
-        }
-    }
-    
-    func callManagerDidMute(_ muted: Bool) {
-        DispatchQueue.main.async {
-            self.isMuted = muted
-        }
-        if muted {
-            SpeechRecognizer.shared.stopRecording()
-        } else {
-            // Se voltarmos do mute e estivermos em modo de escuta, reativa gravação
-            if sessionState == .listening {
-                try? SpeechRecognizer.shared.startRecording()
-            }
         }
     }
 }

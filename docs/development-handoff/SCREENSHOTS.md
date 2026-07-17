@@ -1,6 +1,6 @@
 # Screenshots
 
-Generated: 2026-07-17T16:53:45-03:00
+Generated: 2026-07-17T18:48:12-03:00
 
 Screenshots must be added for UI changes and every publication when possible.
 

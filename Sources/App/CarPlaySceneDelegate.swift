@@ -2,33 +2,57 @@ import CarPlay
 import Combine
 import UIKit
 
-/// Cena CarPlay do Hermes Voice. Aciona a `VoiceSession` diretamente (em vez de depender
-/// de uma notificação ouvida pela `RootView`), pois quando o CarPlay conecta sem o app
-/// estar aberto no iPhone a `RootView` nunca chega a existir e ninguém escuta a notificação
-/// — era por isso que tocar no item não fazia nada.
-final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
+/// Cena CarPlay do Hermes Voice. Usa CPVoiceControlTemplate (a mesma tela nativa de
+/// "assistente de voz" do Jarvis) em vez de um CPListTemplate com texto estático —
+/// dá a animação de microfone/ouvindo/pensando/falando ao vivo, e não parece uma
+/// ligação telefônica. Aciona a `VoiceSession` diretamente (em vez de depender de uma
+/// notificação ouvida pela `RootView`), pois quando o CarPlay conecta sem o app estar
+/// aberto no iPhone a `RootView` nunca chega a existir e ninguém escuta a notificação.
+@MainActor
+final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate, CPInterfaceControllerDelegate {
     private var interfaceController: CPInterfaceController?
-    private var listItem: CPListItem?
     private var cancellables = Set<AnyCancellable>()
+    private let session = VoiceSession.shared
+
+    private var isPushingVoiceControl = false
+    private var isPoppingToRoot = false
+    private var voiceControlTemplateIsOnStack = false
+
+    private let listItem = CPListItem(text: "Diga “Ei Hermes”", detailText: "Toque para ativar a conversa por voz")
+
+    private lazy var listTemplate: CPListTemplate = {
+        listItem.handler = { [weak self] _, completion in
+            self?.toggleHermes()
+            completion()
+        }
+        let section = CPListSection(items: [listItem])
+        return CPListTemplate(title: "Hermes Voice", sections: [section])
+    }()
+
+    private lazy var voiceControlTemplate: CPVoiceControlTemplate = {
+        let states = [
+            CPVoiceControlState(identifier: "idle", titleVariants: ["Diga “Ei Hermes”"], image: UIImage(systemName: "mic"), repeats: false),
+            CPVoiceControlState(identifier: "listening", titleVariants: ["Ouvindo…"], image: UIImage(systemName: "waveform"), repeats: true),
+            CPVoiceControlState(identifier: "processing", titleVariants: ["Processando…"], image: UIImage(systemName: "ellipsis.circle"), repeats: true),
+            CPVoiceControlState(identifier: "speaking", titleVariants: ["Hermes falando…"], image: UIImage(systemName: "speaker.wave.2"), repeats: true),
+            CPVoiceControlState(identifier: "error", titleVariants: ["Algo falhou. Volte e tente de novo."], image: UIImage(systemName: "exclamationmark.triangle"), repeats: false)
+        ]
+        return CPVoiceControlTemplate(voiceControlStates: states)
+    }()
 
     func templateApplicationScene(
         _ templateApplicationScene: CPTemplateApplicationScene,
         didConnect interfaceController: CPInterfaceController
     ) {
         self.interfaceController = interfaceController
-
-        let item = CPListItem(text: "Diga “Ei Hermes”", detailText: "Toque para ativar a conversa por voz")
-        item.handler = { [weak self] _, completion in
-            self?.toggleHermes()
-            completion()
+        interfaceController.delegate = self
+        interfaceController.setRootTemplate(listTemplate, animated: false) { [weak self] _, _ in
+            guard let self else { return }
+            self.observeSession()
+            if self.session.isCallActive {
+                self.presentVoiceControl()
+            }
         }
-        self.listItem = item
-
-        let section = CPListSection(items: [item])
-        let template = CPListTemplate(title: "Hermes Voice", sections: [section])
-        interfaceController.setRootTemplate(template, animated: true, completion: nil)
-
-        observeSession()
     }
 
     func templateApplicationScene(
@@ -36,29 +60,78 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         didDisconnectInterfaceController interfaceController: CPInterfaceController
     ) {
         cancellables.removeAll()
+        isPushingVoiceControl = false
+        isPoppingToRoot = false
+        voiceControlTemplateIsOnStack = false
         self.interfaceController = nil
-        self.listItem = nil
     }
 
     private func toggleHermes() {
-        let session = VoiceSession.shared
         if session.isCallActive {
             session.endCall()
         } else {
+            presentVoiceControl()
             session.startCall()
         }
     }
 
-    /// Mantém o item da lista sincronizado com o estado real da conversa, incluindo
-    /// chamadas iniciadas pelo iPhone (ex.: o motorista deu play no telefone antes de
-    /// conectar no CarPlay).
-    private func observeSession() {
-        let session = VoiceSession.shared
+    func templateDidDisappear(_ aTemplate: CPTemplate, animated: Bool) {
+        guard aTemplate === voiceControlTemplate else { return }
+        voiceControlTemplateIsOnStack = false
+        if session.isCallActive {
+            session.endCall()
+        }
+    }
 
-        Publishers.CombineLatest(session.$isCallActive, session.$sessionState)
+    private func presentVoiceControl() {
+        guard !isPushingVoiceControl, interfaceController?.topTemplate !== voiceControlTemplate else { return }
+        isPushingVoiceControl = true
+        interfaceController?.pushTemplate(voiceControlTemplate, animated: true) { [weak self] _, _ in
+            guard let self else { return }
+            self.isPushingVoiceControl = false
+            self.voiceControlTemplateIsOnStack = true
+            self.updateVoiceControlState(for: self.session.sessionState)
+        }
+    }
+
+    private func popToRootIfNeeded() {
+        guard !isPoppingToRoot, interfaceController?.topTemplate === voiceControlTemplate else { return }
+        isPoppingToRoot = true
+        interfaceController?.popToRootTemplate(animated: true) { [weak self] _, _ in
+            guard let self else { return }
+            self.isPoppingToRoot = false
+            self.voiceControlTemplateIsOnStack = false
+        }
+    }
+
+    private func presentError(_ message: String) {
+        let action = CPAlertAction(title: "OK", style: .default) { [weak self] _ in
+            self?.interfaceController?.dismissTemplate(animated: true, completion: nil)
+        }
+        let alert = CPAlertTemplate(titleVariants: [message], actions: [action])
+        interfaceController?.presentTemplate(alert, animated: true, completion: nil)
+    }
+
+    /// Mantém a lista e a tela de voz sincronizadas com o estado real da conversa,
+    /// incluindo chamadas iniciadas pelo iPhone (ex.: o motorista deu play no telefone
+    /// antes de conectar no CarPlay).
+    private func observeSession() {
+        session.$sessionState
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] isCallActive, state in
-                self?.updateListItem(isCallActive: isCallActive, state: state)
+            .sink { [weak self] state in
+                self?.updateVoiceControlState(for: state)
+            }
+            .store(in: &cancellables)
+
+        session.$isCallActive
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isCallActive in
+                self?.listItem.setText(isCallActive ? "Hermes ativo" : "Diga “Ei Hermes”")
+                if isCallActive {
+                    self?.presentVoiceControl()
+                } else {
+                    self?.popToRootIfNeeded()
+                }
             }
             .store(in: &cancellables)
 
@@ -71,24 +144,13 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             .store(in: &cancellables)
     }
 
-    private func updateListItem(isCallActive: Bool, state: SessionState) {
-        guard let item = listItem else { return }
-        if isCallActive {
-            item.setText("Encerrar conversa")
-            item.setDetailText(state.rawValue)
-        } else {
-            item.setText("Diga “Ei Hermes”")
-            item.setDetailText("Toque para ativar a conversa por voz")
+    private func updateVoiceControlState(for state: SessionState) {
+        guard voiceControlTemplateIsOnStack, session.isCallActive else { return }
+        switch state {
+        case .idle: voiceControlTemplate.activateVoiceControlState(withIdentifier: "idle")
+        case .listening: voiceControlTemplate.activateVoiceControlState(withIdentifier: "listening")
+        case .processing: voiceControlTemplate.activateVoiceControlState(withIdentifier: "processing")
+        case .speaking: voiceControlTemplate.activateVoiceControlState(withIdentifier: "speaking")
         }
-    }
-
-    private func presentError(_ message: String) {
-        guard let interfaceController = interfaceController else { return }
-        let alert = CPAlertTemplate(titleVariants: [message], actions: [
-            CPAlertAction(title: "OK", style: .default) { [weak interfaceController] _ in
-                interfaceController?.dismissTemplate(animated: true, completion: nil)
-            }
-        ])
-        interfaceController.presentTemplate(alert, animated: true, completion: nil)
     }
 }

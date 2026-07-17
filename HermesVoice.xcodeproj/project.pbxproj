@@ -11,7 +11,6 @@
 		194DE80B9AC14C1A3BB3168B /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4568E1953A78E4E65C4ABD91 /* CarPlaySceneDelegate.swift */; };
 		2BD5040F472F19E424882301 /* HermesLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 160BFA4B664F7E7BA383BF81 /* HermesLiveActivityAttributes.swift */; };
 		44F8C6CD1CE7E21DD7FF4A88 /* VersionHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5174684767B5CE9FDB5C0C9 /* VersionHistory.swift */; };
-		48D3FEB9E9F82EF79DA42352 /* CallManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4562879BFC36C700020C7981 /* CallManager.swift */; };
 		4F74598ED78536D11BF74A69 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA26BC5887282F9095FC1C5 /* SettingsView.swift */; };
 		5321143CE57EF93204856B93 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5DFA74BD3F6B076E68EFC57 /* SettingsStore.swift */; };
 		6C9FBACB0E79BED4A2F3771E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 903D5020F604216DFDE6A961 /* Assets.xcassets */; };
@@ -57,7 +56,6 @@
 		074CDD0A56478D2142AB6E92 /* HermesVoiceWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = HermesVoiceWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		160BFA4B664F7E7BA383BF81 /* HermesLiveActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HermesLiveActivityAttributes.swift; sourceTree = "<group>"; };
 		1BA26BC5887282F9095FC1C5 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		4562879BFC36C700020C7981 /* CallManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallManager.swift; sourceTree = "<group>"; };
 		4568E1953A78E4E65C4ABD91 /* CarPlaySceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlaySceneDelegate.swift; sourceTree = "<group>"; };
 		4843AE381C67C0F95B2C478E /* HermesVoiceWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HermesVoiceWidgets.swift; sourceTree = "<group>"; };
 		6D24F879EC5025830D096A4B /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -108,14 +106,6 @@
 			path = Widgets;
 			sourceTree = "<group>";
 		};
-		3D643073C7B1134EF9BC0E48 /* Call */ = {
-			isa = PBXGroup;
-			children = (
-				4562879BFC36C700020C7981 /* CallManager.swift */,
-			);
-			path = Call;
-			sourceTree = "<group>";
-		};
 		4952CE18ECEC329BABAE8596 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
@@ -124,7 +114,6 @@
 				F3CAE5B0A74B09F96D5CBD6F /* Info.plist */,
 				085AF0222994859ECC087425 /* App */,
 				6855862AAE001A10C55514BC /* Audio */,
-				3D643073C7B1134EF9BC0E48 /* Call */,
 				1569890D403C5A37891FA711 /* Hermes */,
 				FF4DAC5BFE274FC69508D651 /* Intents */,
 				F0BD5ECFC8C63BBD4E4CA534 /* Session */,
@@ -301,7 +290,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				9B3DFE0350B6D0E36586456C /* AudioEngineManager.swift in Sources */,
-				48D3FEB9E9F82EF79DA42352 /* CallManager.swift in Sources */,
 				194DE80B9AC14C1A3BB3168B /* CarPlaySceneDelegate.swift in Sources */,
 				888A1FB1770978A0A4FC11DA /* HermesAgentClient.swift in Sources */,
 				713EA2F5458852A396355D71 /* HermesLiveActivityAttributes.swift in Sources */,
@@ -423,7 +411,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 31;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = E743636TCJ;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -444,7 +432,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GIT_COMMIT = dev;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.6.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -506,7 +494,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 31;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = E743636TCJ;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -521,7 +509,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GIT_COMMIT = dev;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.6.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

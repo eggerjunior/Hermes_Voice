@@ -90,7 +90,7 @@ struct RootView: View {
                         }
                     }
 
-                    // Botão Principal (Inicia / Encerra CallKit)
+                    // Botão Principal (Inicia / Encerra a conversa)
                     Button(action: {
                         if session.isCallActive {
                             session.endCall()
@@ -121,7 +121,7 @@ struct RootView: View {
                         }
                     }
                     
-                    // Botão Mudo/Unmute (funciona junto com os comandos do CallKit/CarPlay)
+                    // Botão Mudo/Unmute
                     if session.isCallActive {
                         Button(action: {
                             session.toggleMute()

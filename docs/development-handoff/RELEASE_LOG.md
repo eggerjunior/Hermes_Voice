@@ -4,6 +4,29 @@ Generated: 2026-07-13T17:21:45-03:00
 
 Record every deploy, TestFlight/App Store upload, web publish and external processing status here.
 
+## 2026-07-17 - Remove CallKit; CarPlay voice-control UI matching Jarvis
+
+- App: Hermes Voice
+- Platform: iOS native SwiftUI
+- Bundle ID: `br.app.egger.HermesVoice`
+- Version/build prepared: `1.6.0` / `31`
+- Branch: `main`
+- Base commit before changes: `c95bee1`
+- User report: the CarPlay screen looked different from the sibling app Jarvis (which works fine and is not a simulated phone call), and starting a conversation showed a phone-call banner in CarPlay's now-playing/media UI. User confirmed Jarvis never needs the phone screen open to keep working.
+- Root cause: Hermes deliberately used CallKit (`CXProvider`/`CXCallController` in `Sources/Call/CallManager.swift`) to model the conversation as a VoIP call — that's exactly what made it show up as a phone call on lock screen/CarPlay media. Jarvis never used CallKit; it activates `AVAudioSession` directly (`.playAndRecord`/`.spokenAudio`) and stays alive in the background purely via `UIBackgroundModes: [audio]`.
+- Fix:
+  - Deleted `Sources/Call/CallManager.swift`. `VoiceSession.startCall()/endCall()` now call `AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .voiceChat, ...)`/`setActive(...)` directly; `toggleMute()` just stops/starts the recognizer instead of a `CXSetMutedCallAction`.
+  - `project.yml`: `UIBackgroundModes` changed from `[audio, voip]` to `[audio]`.
+  - `Sources/App/CarPlaySceneDelegate.swift` rewritten to use `CPVoiceControlTemplate` (idle/listening/processing/speaking/error states with animated icons), pushed on top of the root `CPListTemplate`, mirroring Jarvis's `CarPlaySceneDelegate` exactly. Previously it only used a plain `CPListTemplate` with static list-item text.
+  - Cleaned up stale CallKit/VoIP references in comments (`RootView.swift`, `SpeechSynthesizer.swift`, `SpeechRecognizer.swift`, `StartHermesCallIntent.swift`).
+- Commands executed:
+  - `xcodegen generate`
+  - `xcodebuild -project HermesVoice.xcodeproj -scheme HermesVoice -destination 'generic/platform=iOS' -configuration Debug build CODE_SIGNING_ALLOWED=NO` — succeeded, both before and after the CallKit removal.
+  - `git commit` + `git push`
+  - `./scripts/testflight.sh`
+  - `python3 ~/.claude/skills/ildemar_project-handoff-docs/scripts/update_handoff_docs.py .`
+- Status: pending — see command results below for archive/upload outcome. Still needs hands-on verification in CarPlay (or CarPlay simulator) that no call banner appears and that the app still works with the iPhone locked (no CallKit safety net anymore).
+
 ## 2026-07-17 - Fix CarPlay tap doing nothing
 
 - App: Hermes Voice

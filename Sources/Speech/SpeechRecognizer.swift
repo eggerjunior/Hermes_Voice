@@ -111,7 +111,8 @@ class SpeechRecognizer {
         // Agendado no run loop principal: os callbacks do SFSpeechRecognitionTask chegam
         // em filas arbitrárias (sem run loop), o que impediria o Timer de disparar com o
         // app em background / tela bloqueada. Garantir a main run loop mantém o fim de
-        // fala funcionando durante a chamada VoIP bloqueada.
+        // fala funcionando com a tela bloqueada (a sessão de áudio ativa em background
+        // mantém o app rodando).
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.silenceTimer?.invalidate()
