@@ -14,7 +14,8 @@ struct RootView: View {
                     endPoint: .bottom
                 )
                 .ignoresSafeArea()
-                
+
+                ScrollView {
                 VStack(spacing: 40) {
                     // Status de Conexão do Agente
                     HStack(spacing: 8) {
@@ -53,16 +54,20 @@ struct RootView: View {
                             .animation(.easeInOut, value: session.sessionState)
                         
                         if !session.currentTranscript.isEmpty {
-                            Text("\"\(session.currentTranscript)\"")
-                                .font(.body)
-                                .italic()
-                                .foregroundColor(.primary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 24)
-                                .padding(.vertical, 8)
-                                .background(Color(.secondarySystemBackground))
-                                .cornerRadius(12)
-                                .transition(.opacity)
+                            ScrollView {
+                                Text("\"\(session.currentTranscript)\"")
+                                    .font(.title3)
+                                    .italic()
+                                    .foregroundColor(.primary)
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .frame(maxHeight: 220)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 8)
+                            .background(Color(.secondarySystemBackground))
+                            .cornerRadius(12)
+                            .transition(.opacity)
                         }
 
                         // Transcrição da resposta do Hermes (streaming ao vivo)
@@ -74,12 +79,12 @@ struct RootView: View {
                                     .foregroundColor(.secondary)
                                 ScrollView {
                                     Text(session.hermesResponse)
-                                        .font(.body)
+                                        .font(.title3)
                                         .foregroundColor(.primary)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                         .multilineTextAlignment(.leading)
                                 }
-                                .frame(maxHeight: 140)
+                                .frame(maxHeight: 260)
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
@@ -190,6 +195,7 @@ struct RootView: View {
                     .padding(.bottom, 4)
                 }
                 .padding()
+                }
             }
             .navigationTitle("Hermes Voice")
             .navigationBarItems(trailing: Button(action: {
