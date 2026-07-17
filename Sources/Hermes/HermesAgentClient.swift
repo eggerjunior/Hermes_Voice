@@ -240,11 +240,33 @@ class HermesAgentClient: NSObject, HermesAgentClientProtocol, @unchecked Sendabl
         request.timeoutInterval = 60
         request.httpBody = try JSONSerialization.data(withJSONObject: ["provider": provider, "model": model])
 
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
-            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
-            throw httpError(status, data: data)
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+                let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+                throw httpError(status, data: data)
+            }
+        } catch let error as URLError where error.code == .networkConnectionLost || error.code == .timedOut {
+            // O próprio restart do container pode derrubar esta conexão antes da
+            // resposta chegar, mesmo quando a troca é aplicada com sucesso no
+            // servidor. Em vez de reportar falha na hora, confirmamos consultando
+            // o servidor até ele voltar com o modelo esperado.
+            try await confirmModelSwitch(provider: provider, model: model, originalError: error)
         }
+    }
+
+    /// Aguarda o servidor voltar do restart do container disparado por
+    /// `setActiveModel` e confirma se o modelo ativo bate com o solicitado.
+    private func confirmModelSwitch(provider: String, model: String, originalError: URLError) async throws {
+        let deadline = Date().addingTimeInterval(90)
+        while Date() < deadline {
+            try await Task.sleep(nanoseconds: 3_000_000_000)
+            if let catalog = try? await fetchAvailableModels(),
+               catalog.activeProvider == provider, catalog.activeModel == model {
+                return
+            }
+        }
+        throw originalError
     }
 
     /// Consulta o modelo e o motor (provider) LLM configurados no servidor.

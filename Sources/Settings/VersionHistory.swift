@@ -16,8 +16,8 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.5.0"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "29"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.5.1"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "30"
         return "\(version) (Build \(build))"
     }
     
@@ -56,6 +56,15 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.5.1",
+            build: "30",
+            date: "17/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "Corrigido erro \"The network connection was lost\" ao aplicar a troca de modelo/provider: o restart do servidor podia derrubar a conexão HTTP em andamento antes da resposta chegar, mesmo com a troca aplicada com sucesso. Agora o app confirma o resultado consultando o servidor até ele voltar, em vez de reportar falha na hora."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.5.0",
             build: "29",
             date: "17/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
@@ -64,7 +73,7 @@ class VersionManager {
                 "Novo seletor de modelo em Configurações: escolha o provider e o modelo desejado entre os disponíveis no servidor.",
                 "A troca de modelo é validada contra o catálogo real do provider antes de aplicar, com reversão automática caso o servidor não fique saudável depois da troca."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.4.1",
