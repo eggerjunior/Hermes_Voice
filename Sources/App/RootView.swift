@@ -192,11 +192,6 @@ struct RootView: View {
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
             }
-            .onReceive(NotificationCenter.default.publisher(for: .hermesCarPlayActivate)) { _ in
-                if !session.isCallActive {
-                    session.startCall()
-                }
-            }
             .alert(item: Binding<AlertError?>(
                 get: { session.errorMessage.map { AlertError(message: $0) } },
                 set: { _ in session.errorMessage = nil }
