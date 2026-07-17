@@ -25,7 +25,8 @@ Record every deploy, TestFlight/App Store upload, web publish and external proce
   - `git commit` + `git push`
   - `./scripts/testflight.sh`
   - `python3 ~/.claude/skills/ildemar_project-handoff-docs/scripts/update_handoff_docs.py .`
-- Status: pending — see command results below for archive/upload outcome. Still needs hands-on verification in CarPlay (or CarPlay simulator) that no call banner appears and that the app still works with the iPhone locked (no CallKit safety net anymore).
+- Result: archive/export/upload all succeeded (`** ARCHIVE SUCCEEDED **`, `** EXPORT SUCCEEDED **`, `Upload succeeded`).
+- Status: **`1.6.0` (31) uploaded to App Store Connect/TestFlight; package is processing.** Still needs hands-on verification in CarPlay (or CarPlay simulator) that no call banner appears, and that the app still works with the iPhone locked (no CallKit safety net anymore — background survival now depends solely on the active `AVAudioSession` + `UIBackgroundModes: [audio]`, same mechanism as Jarvis).
 
 ## 2026-07-17 - Fix CarPlay tap doing nothing
 
