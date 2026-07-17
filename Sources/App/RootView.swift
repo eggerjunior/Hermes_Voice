@@ -29,7 +29,16 @@ struct RootView: View {
                     .padding(.horizontal, 16)
                     .background(Color(.tertiarySystemBackground))
                     .cornerRadius(20)
-                    
+
+                    if let modelInfo = session.modelInfo {
+                        HStack(spacing: 6) {
+                            Image(systemName: "cpu")
+                            Text("\(modelInfo.model) · \(modelInfo.provider)")
+                        }
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    }
+
                     Spacer()
                     
                     // Estado Atual da Conversa

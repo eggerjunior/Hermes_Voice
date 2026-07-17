@@ -23,7 +23,8 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
     @Published var currentTranscript: String = ""
     @Published var hermesResponse: String = ""
     @Published var connectionLog: String = ""
-    
+    @Published var modelInfo: HermesAgentClient.ModelInfo? = nil
+
     private var cancellables = Set<AnyCancellable>()
     private var accumulatedResponse = ""
     private var lastPrompt = ""
@@ -50,11 +51,23 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
         AudioEngineManager.shared.delegate = self
         SpeechRecognizer.shared.delegate = self
         SpeechSynthesizer.shared.delegate = self
+
+        refreshModelInfo()
     }
-    
+
     // MARK: - Ações Públicas
     func startCall() {
         CallManager.shared.startCall()
+    }
+
+    /// Consulta o modelo/motor ativo no servidor para exibir na tela principal.
+    /// Falha silenciosamente (degrada bem, igual ao botão "Testar conexão").
+    func refreshModelInfo() {
+        Task {
+            if let info = try? await HermesAgentClient.shared.fetchModelInfo() {
+                await MainActor.run { self.modelInfo = info }
+            }
+        }
     }
     
     func endCall() {
@@ -102,6 +115,7 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
             Task {
                 do {
                     try await HermesAgentClient.shared.connect()
+                    self.refreshModelInfo()
                 } catch {
                     print("Erro ao tentar conectar ao WebSocket: \(error.localizedDescription)")
                     DispatchQueue.main.async {

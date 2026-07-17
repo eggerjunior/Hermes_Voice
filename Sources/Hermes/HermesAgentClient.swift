@@ -176,6 +176,77 @@ class HermesAgentClient: NSObject, HermesAgentClientProtocol, @unchecked Sendabl
         let provider: String
     }
 
+    struct AvailableModel: Identifiable {
+        let id: String
+        let name: String
+    }
+
+    struct AvailableProvider: Identifiable {
+        let id: String
+        let label: String
+        let models: [AvailableModel]
+    }
+
+    struct ModelCatalog {
+        let providers: [AvailableProvider]
+        let activeProvider: String
+        let activeModel: String
+    }
+
+    /// Consulta os providers/modelos disponíveis para troca, via `/admin/models`
+    /// (microsserviço `hermes-model-admin` no VPS, que valida contra o catálogo
+    /// real de cada provider antes de permitir a troca).
+    func fetchAvailableModels() async throws -> ModelCatalog {
+        var request = try authorizedRequest(path: "/admin/models")
+        request.httpMethod = "GET"
+        request.timeoutInterval = 20
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+            throw httpError(status, data: data)
+        }
+
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let providersRaw = obj["providers"] as? [[String: Any]] else {
+            throw NSError(domain: "HermesAgentClient", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "Resposta inesperada de /admin/models."])
+        }
+
+        let providers: [AvailableProvider] = providersRaw.compactMap { p in
+            guard let id = p["id"] as? String, let label = p["label"] as? String,
+                  let modelsRaw = p["models"] as? [[String: Any]] else { return nil }
+            let models: [AvailableModel] = modelsRaw.compactMap { m in
+                guard let modelId = m["id"] as? String else { return nil }
+                return AvailableModel(id: modelId, name: (m["name"] as? String) ?? modelId)
+            }
+            return AvailableProvider(id: id, label: label, models: models)
+        }
+
+        let active = obj["active"] as? [String: Any]
+        return ModelCatalog(
+            providers: providers,
+            activeProvider: (active?["provider"] as? String) ?? "",
+            activeModel: (active?["model"] as? String) ?? ""
+        )
+    }
+
+    /// Troca o provider/modelo ativo no servidor. Reinicia o container do
+    /// agente para aplicar a mudança — pode demorar dezenas de segundos.
+    func setActiveModel(provider: String, model: String) async throws {
+        var request = try authorizedRequest(path: "/admin/model")
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 60
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["provider": provider, "model": model])
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+            throw httpError(status, data: data)
+        }
+    }
+
     /// Consulta o modelo e o motor (provider) LLM configurados no servidor.
     /// Builds diferentes do gateway ja expuseram essa informacao em rotas/campos
     /// diferentes; por isso tentamos os endpoints de diagnostico primeiro e caimos

@@ -16,8 +16,8 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.4.1"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "28"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.5.0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "29"
         return "\(version) (Build \(build))"
     }
     
@@ -56,6 +56,17 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.5.0",
+            build: "29",
+            date: "17/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "Tela principal agora mostra o modelo/motor (provider) ativo no Hermes, junto ao status de conexão.",
+                "Novo seletor de modelo em Configurações: escolha o provider e o modelo desejado entre os disponíveis no servidor.",
+                "A troca de modelo é validada contra o catálogo real do provider antes de aplicar, com reversão automática caso o servidor não fique saudável depois da troca."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.4.1",
             build: "28",
             date: "17/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
@@ -63,7 +74,7 @@ class VersionManager {
                 "Corrigido o toque no CarPlay não fazer nada: a cena do carro dependia de uma notificação só ouvida pela tela do iPhone, que não existe quando o app conecta no carro sem ter sido aberto no telefone antes.",
                 "CarPlay agora aciona a conversa com o Hermes diretamente e reflete o estado da chamada (ouvindo/processando/falando) e erros na tela do carro."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.4.0",

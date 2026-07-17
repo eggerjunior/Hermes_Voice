@@ -8,7 +8,17 @@ struct SettingsView: View {
     @State private var isTesting = false
     @State private var testResult: String? = nil
     @State private var testSucceeded = false
-    
+
+    @State private var isLoadingModels = false
+    @State private var modelLoadError: String? = nil
+    @State private var availableProviders: [HermesAgentClient.AvailableProvider] = []
+    @State private var selectedProviderId: String = ""
+    @State private var selectedModelId: String = ""
+    @State private var isApplyingModel = false
+    @State private var applyModelResult: String? = nil
+    @State private var applyModelSucceeded = false
+
+
     var body: some View {
         NavigationView {
             Form {
@@ -79,6 +89,82 @@ struct SettingsView: View {
                     }
                 }
                 
+                Section(header: Text("Modelo do Agente"),
+                        footer: Text("Trocar o modelo reinicia o servidor do Hermes — pode levar cerca de 1 minuto e a conversa atual será encerrada.")) {
+                    if isLoadingModels {
+                        HStack {
+                            ProgressView()
+                            Text("Carregando modelos disponíveis...")
+                                .foregroundColor(.secondary)
+                        }
+                    } else if availableProviders.isEmpty {
+                        Button(action: loadAvailableModels) {
+                            HStack {
+                                Image(systemName: "arrow.clockwise")
+                                Text("Carregar modelos disponíveis")
+                            }
+                        }
+                    } else {
+                        Picker("Provider", selection: $selectedProviderId) {
+                            ForEach(availableProviders) { provider in
+                                Text(provider.label).tag(provider.id)
+                            }
+                        }
+                        .onChange(of: selectedProviderId) { newProviderId in
+                            selectedModelId = availableProviders.first(where: { $0.id == newProviderId })?.models.first?.id ?? ""
+                        }
+
+                        if let models = availableProviders.first(where: { $0.id == selectedProviderId })?.models {
+                            Picker("Modelo", selection: $selectedModelId) {
+                                ForEach(models) { model in
+                                    Text(model.name).tag(model.id)
+                                }
+                            }
+                        }
+
+                        Button(action: applyModel) {
+                            HStack {
+                                if isApplyingModel {
+                                    ProgressView()
+                                    Text("Aplicando...")
+                                } else {
+                                    Image(systemName: "checkmark.circle")
+                                    Text("Aplicar modelo")
+                                }
+                            }
+                        }
+                        .disabled(isApplyingModel || selectedProviderId.isEmpty || selectedModelId.isEmpty)
+
+                        Button(action: loadAvailableModels) {
+                            Text("Recarregar lista")
+                                .font(.caption)
+                        }
+                        .disabled(isLoadingModels || isApplyingModel)
+                    }
+
+                    if let modelLoadError = modelLoadError {
+                        HStack(alignment: .top, spacing: 6) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.red)
+                            Text(modelLoadError)
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    if let applyModelResult = applyModelResult {
+                        HStack(alignment: .top, spacing: 6) {
+                            Image(systemName: applyModelSucceeded ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                .foregroundColor(applyModelSucceeded ? .green : .red)
+                            Text(applyModelResult)
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+
                 Section {
                     HStack {
                         Spacer()
@@ -137,6 +223,54 @@ struct SettingsView: View {
                     testSucceeded = false
                     testResult = error.localizedDescription
                     isTesting = false
+                }
+            }
+        }
+    }
+
+    private func loadAvailableModels() {
+        isLoadingModels = true
+        modelLoadError = nil
+        applyModelResult = nil
+        Task {
+            do {
+                let catalog = try await HermesAgentClient.shared.fetchAvailableModels()
+                await MainActor.run {
+                    availableProviders = catalog.providers
+                    selectedProviderId = catalog.activeProvider.isEmpty
+                        ? (catalog.providers.first?.id ?? "")
+                        : catalog.activeProvider
+                    selectedModelId = catalog.activeModel.isEmpty
+                        ? (availableProviders.first(where: { $0.id == selectedProviderId })?.models.first?.id ?? "")
+                        : catalog.activeModel
+                    isLoadingModels = false
+                }
+            } catch {
+                await MainActor.run {
+                    modelLoadError = error.localizedDescription
+                    isLoadingModels = false
+                }
+            }
+        }
+    }
+
+    private func applyModel() {
+        isApplyingModel = true
+        applyModelResult = nil
+        Task {
+            do {
+                try await HermesAgentClient.shared.setActiveModel(provider: selectedProviderId, model: selectedModelId)
+                await MainActor.run {
+                    applyModelSucceeded = true
+                    applyModelResult = "Modelo atualizado com sucesso."
+                    isApplyingModel = false
+                }
+                VoiceSession.shared.refreshModelInfo()
+            } catch {
+                await MainActor.run {
+                    applyModelSucceeded = false
+                    applyModelResult = error.localizedDescription
+                    isApplyingModel = false
                 }
             }
         }
