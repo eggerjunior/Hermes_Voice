@@ -44,8 +44,9 @@ class AudioEngineManager {
     
     func stop() {
         guard isRunning else { return }
-        audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
+        audioEngine.stop()
+        try? audioEngine.inputNode.setVoiceProcessingEnabled(false)
         isRunning = false
     }
 }

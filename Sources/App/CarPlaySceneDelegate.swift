@@ -18,7 +18,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private var isPoppingToRoot = false
     private var voiceControlTemplateIsOnStack = false
 
-    private let listItem = CPListItem(text: "Diga “Ei Hermes”", detailText: "Toque para ativar a conversa por voz")
+    private let listItem = CPListItem(text: "Clique aqui para conversar com o Hermes", detailText: "Toque para ativar a conversa por voz")
 
     private lazy var listTemplate: CPListTemplate = {
         listItem.handler = { [weak self] _, completion in
@@ -48,12 +48,12 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private func makeVoiceControlTemplate() -> CPVoiceControlTemplate {
         let idleTitle: String
         if let label = currentModelLabel {
-            idleTitle = "Diga “Ei Hermes” (\(label))"
+            idleTitle = "Clique aqui para conversar com o Hermes (\(label))"
         } else {
-            idleTitle = "Diga “Ei Hermes”"
+            idleTitle = "Clique aqui para conversar com o Hermes"
         }
         let states = [
-            CPVoiceControlState(identifier: "idle", titleVariants: [idleTitle, "Diga “Ei Hermes”"], image: UIImage(systemName: "mic"), repeats: false),
+            CPVoiceControlState(identifier: "idle", titleVariants: [idleTitle, "Clique aqui para conversar com o Hermes"], image: UIImage(systemName: "mic"), repeats: false),
             CPVoiceControlState(identifier: "listening", titleVariants: ["Ouvindo…"], image: UIImage(systemName: "waveform"), repeats: true),
             CPVoiceControlState(identifier: "processing", titleVariants: ["Processando…"], image: UIImage(systemName: "ellipsis.circle"), repeats: true),
             CPVoiceControlState(identifier: "speaking", titleVariants: ["Hermes falando…"], image: UIImage(systemName: "speaker.wave.2"), repeats: true),
@@ -154,7 +154,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         session.$isCallActive
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isCallActive in
-                self?.listItem.setText(isCallActive ? "Hermes ativo" : "Diga “Ei Hermes”")
+                self?.listItem.setText(isCallActive ? "Hermes ativo" : "Clique aqui para conversar com o Hermes")
                 if isCallActive {
                     self?.presentVoiceControl()
                 } else {

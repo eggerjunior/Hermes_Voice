@@ -16,8 +16,8 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.7.0"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "34"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.7.1"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "35"
         return "\(version) (Build \(build))"
     }
     
@@ -56,13 +56,23 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.7.1",
+            build: "35",
+            date: "17/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "Corrigido o indicador de microfone do sistema no CarPlay ficar aceso depois de encerrar a conversa (em vez de durante): ordem de desligamento do motor de áudio corrigida (remove o tap antes de parar o engine) e a desativação da sessão de áudio agora tem retry em caso de falha silenciosa.",
+                "Trocada a frase inicial da tela do CarPlay de \"Diga Ei Hermes\" (não suportado, pois não há hotword) para \"Clique aqui para conversar com o Hermes\"."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.7.0",
             build: "34",
             date: "17/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
             changes: [
                 "CarPlay agora mostra o provedor/modelo ativo do Hermes: no detail text da lista raiz e no título do estado ocioso da tela de voz (templates nativos do CarPlay não suportam caixas de texto livres para transcrição)."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.6.2",

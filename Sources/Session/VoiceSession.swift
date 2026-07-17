@@ -112,8 +112,21 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
         }
     }
 
+    /// O motor de áudio acabou de parar (removeTap + engine.stop()); o thread de render
+    /// do Core Audio pode levar um instante para liberar o hardware do microfone. Se
+    /// `setActive(false)` for chamado enquanto ele ainda está desligando, a chamada falha
+    /// silenciosamente (ver `try?` original) e a sessão fica presa em `.playAndRecord`
+    /// ativa — é isso que deixava o indicador de microfone do sistema aceso mesmo depois
+    /// da ligação encerrada. Tenta de novo em caso de falha.
     private func deactivateAudioSession() {
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        let audioSession = AVAudioSession.sharedInstance()
+        do {
+            try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
+        } catch {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                try? audioSession.setActive(false, options: .notifyOthersOnDeactivation)
+            }
+        }
     }
 
     // MARK: - Ciclo de Vida da Ligação
