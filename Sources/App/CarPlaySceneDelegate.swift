@@ -29,16 +29,38 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         return CPListTemplate(title: "Hermes Voice", sections: [section])
     }()
 
-    private lazy var voiceControlTemplate: CPVoiceControlTemplate = {
+    /// Rótulo curto de provedor/modelo (ex.: "gpt-4o · OpenAI") anexado ao detail
+    /// text da lista raiz e ao título do estado "idle" da tela de voz — os únicos
+    /// dois lugares fixos disponíveis nos templates nativos do CarPlay.
+    private func modelLabel(from info: HermesAgentClient.ModelInfo?) -> String? {
+        guard let info else { return nil }
+        return "\(info.model) · \(info.provider)"
+    }
+
+    private var currentModelLabel: String?
+
+    /// CPVoiceControlState/Template são imutáveis após criados — não dá para
+    /// atualizar o título de um estado já existente. Por isso o template inteiro é
+    /// reconstruído sob demanda (só antes de apresentar, nunca com ele já na tela)
+    /// toda vez que o modelo/provedor ativo muda.
+    private lazy var voiceControlTemplate: CPVoiceControlTemplate = makeVoiceControlTemplate()
+
+    private func makeVoiceControlTemplate() -> CPVoiceControlTemplate {
+        let idleTitle: String
+        if let label = currentModelLabel {
+            idleTitle = "Diga “Ei Hermes” (\(label))"
+        } else {
+            idleTitle = "Diga “Ei Hermes”"
+        }
         let states = [
-            CPVoiceControlState(identifier: "idle", titleVariants: ["Diga “Ei Hermes”"], image: UIImage(systemName: "mic"), repeats: false),
+            CPVoiceControlState(identifier: "idle", titleVariants: [idleTitle, "Diga “Ei Hermes”"], image: UIImage(systemName: "mic"), repeats: false),
             CPVoiceControlState(identifier: "listening", titleVariants: ["Ouvindo…"], image: UIImage(systemName: "waveform"), repeats: true),
             CPVoiceControlState(identifier: "processing", titleVariants: ["Processando…"], image: UIImage(systemName: "ellipsis.circle"), repeats: true),
             CPVoiceControlState(identifier: "speaking", titleVariants: ["Hermes falando…"], image: UIImage(systemName: "speaker.wave.2"), repeats: true),
             CPVoiceControlState(identifier: "error", titleVariants: ["Algo falhou. Volte e tente de novo."], image: UIImage(systemName: "exclamationmark.triangle"), repeats: false)
         ]
         return CPVoiceControlTemplate(voiceControlStates: states)
-    }()
+    }
 
     func templateApplicationScene(
         _ templateApplicationScene: CPTemplateApplicationScene,
@@ -91,6 +113,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private func presentVoiceControl() {
         guard !isPushingVoiceControl, interfaceController?.topTemplate !== voiceControlTemplate else { return }
         isPushingVoiceControl = true
+        voiceControlTemplate = makeVoiceControlTemplate()
         interfaceController?.presentTemplate(voiceControlTemplate, animated: true) { [weak self] _, _ in
             guard let self else { return }
             self.isPushingVoiceControl = false
@@ -145,6 +168,16 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             .compactMap { $0 }
             .sink { [weak self] message in
                 self?.presentError(message)
+            }
+            .store(in: &cancellables)
+
+        session.$modelInfo
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] info in
+                guard let self else { return }
+                self.currentModelLabel = self.modelLabel(from: info)
+                let base = "Toque para ativar a conversa por voz"
+                self.listItem.setDetailText(self.currentModelLabel.map { "\(base) · \($0)" } ?? base)
             }
             .store(in: &cancellables)
     }
