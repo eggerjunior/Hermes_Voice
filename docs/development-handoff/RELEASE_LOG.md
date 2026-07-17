@@ -4,6 +4,23 @@ Generated: 2026-07-13T17:21:45-03:00
 
 Record every deploy, TestFlight/App Store upload, web publish and external processing status here.
 
+## 2026-07-17 - Native CarPlay App Scene
+
+- App: Hermes Voice
+- Platform: iOS native SwiftUI
+- Bundle ID: `br.app.egger.HermesVoice`
+- Version/build prepared: `1.4.0` / `27`
+- Branch: `main`
+- Base commit before changes: `c5ac27f`
+- Change: added `Sources/App/CarPlaySceneDelegate.swift` (`CPTemplateApplicationSceneDelegate`, `CPListTemplate`) and registered it in `project.yml`'s `UIApplicationSceneManifest`, following the same pattern already shipped in the local Jarvis app. Added `com.apple.developer.carplay-voice-based-conversation` to `Sources/HermesVoice.entitlements` via `project.yml` entitlements properties, now that Apple approved this entitlement. Tapping the CarPlay list item posts `.hermesCarPlayActivate`, observed by `RootView` to call `session.startCall()`.
+- Commands executed:
+  - `xcodegen generate`
+  - `git commit` + `git push` (commit `e1761c0b`)
+  - `xcodebuild -project HermesVoice.xcodeproj -scheme HermesVoice -destination 'generic/platform=iOS Simulator' build`
+  - `python3 ~/.codex/skills/project-handoff-docs/scripts/update_handoff_docs.py .`
+- Result: simulator build succeeded with the new `CarPlaySceneDelegate` compiled into the app target.
+- Status: not yet uploaded to TestFlight — this turn only validated the local build. Run `scripts/testflight.sh` to ship `1.4.0` (27), then validate the CarPlay scene with CarPlay Simulator or a physical head unit connected to the same iPhone the build is installed on.
+
 ## 2026-07-13 - TestFlight Release With Widget
 
 - App: Hermes Voice

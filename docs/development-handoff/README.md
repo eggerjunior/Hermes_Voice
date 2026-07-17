@@ -1,6 +1,6 @@
 # Development Handoff: Hermes_Voice
 
-Generated: 2026-07-13T17:21:45-03:00
+Generated: 2026-07-17T15:20:02-03:00
 
 This folder is the portable project handoff for humans and AI development tools.
 
@@ -16,9 +16,9 @@ This folder is the portable project handoff for humans and AI development tools.
 
 - Project: `Hermes_Voice`
 - Branch: `main`
-- Commit: `2e4d00ad`
-- Version: `1.3.0`
-- Build: `26`
+- Commit: `e1761c0b`
+- Version: `1.4.0`
+- Build: `27`
 - Repo: `https://github.com/eggerjunior/Hermes_Voice.git`
 
 ## Key Files
@@ -26,6 +26,8 @@ This folder is the portable project handoff for humans and AI development tools.
 - `HANDOFF.md`
 - `README.md`
 - `project.yml`
+- `Sources/App/CarPlaySceneDelegate.swift`
+- `Sources/App/RootView.swift`
 - `Shared/HermesLiveActivityAttributes.swift`
 - `Sources/App/HermesLiveActivityController.swift`
 - `Sources/Session/VoiceSession.swift`
