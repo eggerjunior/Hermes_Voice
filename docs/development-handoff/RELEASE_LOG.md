@@ -4,6 +4,26 @@ Generated: 2026-07-13T17:21:45-03:00
 
 Record every deploy, TestFlight/App Store upload, web publish and external processing status here.
 
+## 2026-07-17 - Fix CarPlay voice-control X button and stuck "call" indicator
+
+- App: Hermes Voice
+- Platform: iOS native SwiftUI
+- Bundle ID: `br.app.egger.HermesVoice`
+- Version/build prepared: `1.6.2` / `33`
+- Branch: `main`
+- Base commit before changes: `7ba74c2`
+- User report (with screenshots): on the CarPlay "Ouvindo…" voice screen, the X button in the top-left does nothing at all when tapped. The back/chevron button next to it does end the Hermes session, but afterward the CarPlay clock/status area turns orange as if an "active call" were in progress (it isn't a real call).
+- Root cause: `CPVoiceControlTemplate` is a modal template — per Apple's own guidance it must be shown/closed via `presentTemplate`/`dismissTemplate`, never `pushTemplate`/`popToRootTemplate`. `Sources/App/CarPlaySceneDelegate.swift` was pushing it onto the root `CPListTemplate`'s navigation stack instead. The X is the template's own system-provided modal close control, which only wires up correctly when the template goes through the present/dismiss flow — pushed instead, it had no action bound to it (no-op). The back chevron came from the (incorrect) push/pop navigation and did call `session.endCall()`, but because the template never went through its expected present/dismiss lifecycle, CarPlay's own "voice session" chrome wasn't torn down cleanly, leaving the orange indicator stuck.
+- Fix (`Sources/App/CarPlaySceneDelegate.swift`): `presentVoiceControl()` now calls `interfaceController?.presentTemplate(voiceControlTemplate, ...)` instead of `pushTemplate`; `popToRootIfNeeded()` now calls `interfaceController?.dismissTemplate(...)` instead of `popToRootTemplate`. `templateDidDisappear` delegate callback (which fires for both push/pop and present/dismiss) still drives `session.endCall()`, so state stays in sync either way.
+- Commands executed:
+  - `xcodebuild -scheme HermesVoice -destination 'generic/platform=iOS' build` — succeeded
+  - `git commit` + `git push` (CarPlay fix, then version bump)
+  - `xcodegen generate`
+  - `git commit` + `git push` (regenerated project + version bump)
+  - `./scripts/testflight.sh`
+- Result: archive/export/upload all succeeded (`** ARCHIVE SUCCEEDED **`, `** EXPORT SUCCEEDED **`, `Upload succeeded`).
+- Status: **`1.6.2` (33) uploaded to App Store Connect/TestFlight; package is processing.** Still needs hands-on verification in an actual CarPlay session (real or simulator) that tapping the X now properly ends the session and that the orange "call" indicator no longer appears/sticks after ending via either button.
+
 ## 2026-07-17 - Larger transcript area on main screen
 
 - App: Hermes Voice
