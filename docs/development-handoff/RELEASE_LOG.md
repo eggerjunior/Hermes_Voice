@@ -4,6 +4,25 @@ Generated: 2026-07-13T17:21:45-03:00
 
 Record every deploy, TestFlight/App Store upload, web publish and external processing status here.
 
+## 2026-07-17 - Fix CarPlay tap doing nothing
+
+- App: Hermes Voice
+- Platform: iOS native SwiftUI
+- Bundle ID: `br.app.egger.HermesVoice`
+- Version/build prepared: `1.4.1` / `28`
+- Branch: `main`
+- Base commit before changes: `683dad1`
+- Root cause: after the CarPlay app scene shipped in `1.4.0`/build 27, the icon appeared on CarPlay and connected, but tapping the list item did nothing. `CarPlaySceneDelegate` only posted a `.hermesCarPlayActivate` notification; the only listener was `RootView`'s `.onReceive`, which only exists once the iPhone's own SwiftUI scene has been created. When CarPlay connects without the app having been opened on the phone first, `RootView` never exists, so nothing was listening and the tap was a silent no-op.
+- Fix: `Sources/App/CarPlaySceneDelegate.swift` now calls `VoiceSession.shared.startCall()/endCall()` directly instead of posting a notification, and subscribes (Combine) to `VoiceSession`'s `$isCallActive`/`$sessionState`/`$errorMessage` publishers to keep the CarPlay list item's text/detail in sync with the real conversation state (listening/processing/speaking) and to surface errors via `CPAlertTemplate`. Removed the now-dead `.hermesCarPlayActivate` notification and its `RootView` listener.
+- Commands executed:
+  - `xcodegen generate`
+  - `xcodebuild -project HermesVoice.xcodeproj -scheme HermesVoice -destination 'generic/platform=iOS' -configuration Debug build`
+  - `git commit` + `git push` (commits `3397257`, `3f4b524`)
+  - `./scripts/testflight.sh`
+  - `python3 ~/.claude/skills/ildemar_project-handoff-docs/scripts/update_handoff_docs.py .`
+- Result: device build succeeded; archive/export/upload all succeeded (`** ARCHIVE SUCCEEDED **`, `** EXPORT SUCCEEDED **`, `Upload succeeded`).
+- Status: **`1.4.1` (28) uploaded to App Store Connect/TestFlight; package is processing.** Still needs to be verified hands-on in a car (or CarPlay simulator) to confirm the tap now actually starts the Hermes conversation end-to-end.
+
 ## 2026-07-17 - Native CarPlay App Scene
 
 - App: Hermes Voice
