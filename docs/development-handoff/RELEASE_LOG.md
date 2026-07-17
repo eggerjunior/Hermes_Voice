@@ -19,7 +19,12 @@ Record every deploy, TestFlight/App Store upload, web publish and external proce
   - `xcodebuild -project HermesVoice.xcodeproj -scheme HermesVoice -destination 'generic/platform=iOS Simulator' build`
   - `python3 ~/.codex/skills/project-handoff-docs/scripts/update_handoff_docs.py .`
 - Result: simulator build succeeded with the new `CarPlaySceneDelegate` compiled into the app target.
-- Status: not yet uploaded to TestFlight — this turn only validated the local build. Run `scripts/testflight.sh` to ship `1.4.0` (27), then validate the CarPlay scene with CarPlay Simulator or a physical head unit connected to the same iPhone the build is installed on.
+- `./scripts/testflight.sh` attempted next; **archive for device failed**:
+  - `error: Provisioning profile "iOS Team Provisioning Profile: br.app.egger.HermesVoice" doesn't include the CarPlay Voice Based Conversation capability. CarPlay Voice Based Conversation capability needs to be assigned to your team and bundle identifier by Apple in order to be included in a profile.`
+  - `error: Entitlement com.apple.developer.carplay-voice-based-conversation requires approval from Apple to include in a profile. Please request access to the associated capability.`
+- Root cause: the CarPlay Voice Based Conversation capability is **not yet enabled for the `br.app.egger.HermesVoice` App ID** in the Apple Developer portal, even though the same capability was requested/approved for the separate Jarvis App ID. Apple grants this entitlement per App ID, not per team.
+- Status: **blocked on Apple Developer portal action.** Code, entitlements file and `project.yml` are committed and pushed (commit `889d323`), and the CarPlay scene compiles for the simulator, but no distributable archive/TestFlight build exists yet for `1.4.0` (27).
+- Next action required (external, needs Ildemar's Apple Developer account): open developer.apple.com → Certificates, Identifiers & Profiles → Identifiers → `br.app.egger.HermesVoice`, enable "CarPlay Voice Based Conversation" (request it if not already available for this App ID, same as was done for Jarvis), regenerate/download the provisioning profile (or let Xcode automatic signing refresh it), then re-run `./scripts/testflight.sh`.
 
 ## 2026-07-13 - TestFlight Release With Widget
 

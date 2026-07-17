@@ -120,10 +120,11 @@ Physical iPhone is required to validate CallKit audio, microphone permissions, L
 
 ## Known Risks And Pending Work
 
+- **Blocked:** `br.app.egger.HermesVoice`'s App ID does not have the CarPlay Voice Based Conversation capability enabled in the Apple Developer portal yet, so `scripts/testflight.sh` fails at the archive step (`error: Entitlement com.apple.developer.carplay-voice-based-conversation requires approval from Apple`). This capability was requested/approved for the separate Jarvis App ID, but Apple grants it per App ID, not per team — it must be enabled specifically for `br.app.egger.HermesVoice` before a device archive/TestFlight build can succeed. See `RELEASE_LOG.md` (2026-07-17) for the exact next action.
 - The CarPlay app scene has not yet been validated visually in CarPlay Simulator or a physical head unit; only a simulator (iOS Simulator, non-CarPlay) build has been verified to compile.
 - Live Activity updates during long streaming responses should be tested on device for frequency/throttling behavior.
 - Screenshots of the widget, Live Activity and CarPlay app UI still need to be captured on a physical device.
-- Version `1.4.0` build `27` (CarPlay app scene) has not yet been uploaded to TestFlight.
+- Version `1.4.0` build `27` (CarPlay app scene) has not yet been uploaded to TestFlight — blocked on the capability grant above.
 
 ## Import Notes For Other Tools
 
