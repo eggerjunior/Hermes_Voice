@@ -1,6 +1,6 @@
 {
   "schema": "ildemar_project-handoff-docs/v1",
-  "generated_at": "2026-07-17T18:48:12-03:00",
+  "generated_at": "2026-07-17T19:16:29-03:00",
   "project": {
     "name": "Hermes_Voice",
     "root": "/Users/ildemareggerjunior/Projects/Hermes_Voice",
@@ -10,21 +10,21 @@
   },
   "git": {
     "branch": "main",
-    "commit": "c95bee13",
-    "status": "M HermesVoice.xcodeproj/project.pbxproj\n M Sources/App/CarPlaySceneDelegate.swift\n M Sources/App/RootView.swift\n D Sources/Call/CallManager.swift\n M Sources/Info.plist\n M Sources/Intents/StartHermesCallIntent.swift\n M Sources/Session/VoiceSession.swift\n M Sources/Settings/VersionHistory.swift\n M Sources/Speech/SpeechRecognizer.swift\n M Sources/Speech/SpeechSynthesizer.swift\n M project.yml",
+    "commit": "01179705",
+    "status": "M HermesVoice.xcodeproj/project.pbxproj\n M docs/development-handoff/RELEASE_LOG.md",
     "remote": "https://github.com/eggerjunior/Hermes_Voice.git",
     "latest_commits": [
-      "c95bee1 Fix \"network connection lost\" error when applying model switch",
-      "8caf959 Mostrar modelo ativo na tela principal e adicionar seletor de modelo/provider",
-      "b61e3a7 Update handoff docs for the CarPlay tap fix (1.4.1 / 28)",
-      "3f4b524 Bump to 1.4.1 (28) for the CarPlay activation fix",
-      "3397257 Fix CarPlay tap doing nothing by driving VoiceSession directly"
+      "0117970 Bump 1.6.1 (32): registra aumento da área de transcrição no changelog",
+      "ee54ab9 Aumenta área de transcrição da fala do usuário e resposta do Hermes",
+      "a6df99c Registra upload do 1.6.0 (31) no release log",
+      "bffcf78 Remove CallKit e ajusta CarPlay pra ficar igual ao Jarvis (1.6.0/31)",
+      "c95bee1 Fix \"network connection lost\" error when applying model switch"
     ],
     "latest_tags": []
   },
   "version": {
-    "version": "1.6.0",
-    "build": "31",
+    "version": "1.6.1",
+    "build": "32",
     "git_commit_fallback": "dev",
     "bundle_id": "br.app.egger.HermesVoice",
     "development_team": "E743636TCJ"

@@ -1,16 +1,16 @@
 # Project Context
 
-Generated: 2026-07-17T18:48:12-03:00
+Generated: 2026-07-17T19:16:29-03:00
 
 ## Snapshot
 
 - Project: `Hermes_Voice`
 - Root: `/Users/ildemareggerjunior/Projects/Hermes_Voice`
 - Branch: `main`
-- Commit: `c95bee13`
+- Commit: `01179705`
 - Git status: dirty
-- Version: `1.6.0`
-- Build: `31`
+- Version: `1.6.1`
+- Build: `32`
 - Bundle/package id: `br.app.egger.HermesVoice`
 - Detected stack: ios_xcodegen
 
@@ -49,8 +49,8 @@ Detected version/build fields:
 
 ```json
 {
-  "version": "1.6.0",
-  "build": "31",
+  "version": "1.6.1",
+  "build": "32",
   "git_commit_fallback": "dev",
   "bundle_id": "br.app.egger.HermesVoice",
   "development_team": "E743636TCJ"
@@ -69,8 +69,7 @@ TODO: List validation commands and the last known results.
 
 ## Recent Decisions
 
-- **CallKit removed (v1.6.0/build 31):** the app no longer registers the conversation as a VoIP call (`CXProvider`/`CXCallController`, previously in `Sources/Call/CallManager.swift`, now deleted). `VoiceSession.startCall()/endCall()` activate `AVAudioSession` directly (`.playAndRecord`/`.voiceChat`, `.defaultToSpeaker`), matching the approach already used by the sibling app Jarvis (`~/Projects/Jarvis@apvictorio`). Reason: CallKit made the conversation show up as a phone call on the lock screen and in CarPlay's now-playing/media UI, which the user didn't want. `UIBackgroundModes` dropped `voip`, kept only `audio` — an active audio session with that background mode is what keeps the app alive with the phone locked (confirmed working this way in Jarvis), not CallKit.
-- **CarPlay screen now uses `CPVoiceControlTemplate`** (`Sources/App/CarPlaySceneDelegate.swift`) instead of a plain `CPListTemplate` with static text — same native voice-assistant UI component Jarvis uses, with animated idle/listening/processing/speaking/error states driven by `VoiceSession`'s published state via Combine.
+TODO: Record important technical decisions and reasons.
 
 ## Known Risks And Pending Work
 

@@ -4,6 +4,24 @@ Generated: 2026-07-13T17:21:45-03:00
 
 Record every deploy, TestFlight/App Store upload, web publish and external processing status here.
 
+## 2026-07-17 - Larger transcript area on main screen
+
+- App: Hermes Voice
+- Platform: iOS native SwiftUI
+- Bundle ID: `br.app.egger.HermesVoice`
+- Version/build prepared: `1.6.1` / `32`
+- Branch: `main`
+- Base commit before changes: `a6df99c`
+- User report (App Store feedback, build 1.6.0/31): "Aumenta o espaço do tamanho da transcrição da minha fala e da fala do Hermes."
+- Fix (`Sources/App/RootView.swift`): user-speech transcript and Hermes-response text bumped from `.body` to `.title3`; both boxes now scroll with taller max heights (220pt / 260pt) instead of clipping; the whole screen content wrapped in a `ScrollView` so the larger text never gets cut off on smaller devices.
+- Commands executed:
+  - `xcodebuild ... -destination 'generic/platform=iOS Simulator' -configuration Debug build` — succeeded
+  - `git commit` + `git push` (UI fix, then version bump)
+  - `./scripts/testflight.sh`
+  - `python3 ~/.claude/skills/ildemar_project-handoff-docs/scripts/update_handoff_docs.py .`
+- Result: archive/export/upload all succeeded (`** ARCHIVE SUCCEEDED **`, `** EXPORT SUCCEEDED **`, `Upload succeeded`).
+- Status: **`1.6.1` (32) uploaded to App Store Connect/TestFlight; package is processing.** Still needs hands-on verification that the larger transcript text looks right and doesn't crowd out the call/mute buttons on a real device.
+
 ## 2026-07-17 - Remove CallKit; CarPlay voice-control UI matching Jarvis
 
 - App: Hermes Voice
