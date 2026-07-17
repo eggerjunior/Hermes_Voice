@@ -83,10 +83,15 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         }
     }
 
+    /// CPVoiceControlTemplate é modal: precisa ser apresentado/dispensado com
+    /// present/dismissTemplate, nunca push/popTemplate. Ao empurrá-lo na pilha de
+    /// navegação (como antes), o X nativo do template — que só funciona junto do
+    /// fluxo present/dismiss — ficava sem nenhuma ação associada, e o CarPlay não
+    /// encerrava direito o indicador de "chamada" ao voltar.
     private func presentVoiceControl() {
         guard !isPushingVoiceControl, interfaceController?.topTemplate !== voiceControlTemplate else { return }
         isPushingVoiceControl = true
-        interfaceController?.pushTemplate(voiceControlTemplate, animated: true) { [weak self] _, _ in
+        interfaceController?.presentTemplate(voiceControlTemplate, animated: true) { [weak self] _, _ in
             guard let self else { return }
             self.isPushingVoiceControl = false
             self.voiceControlTemplateIsOnStack = true
@@ -97,7 +102,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private func popToRootIfNeeded() {
         guard !isPoppingToRoot, interfaceController?.topTemplate === voiceControlTemplate else { return }
         isPoppingToRoot = true
-        interfaceController?.popToRootTemplate(animated: true) { [weak self] _, _ in
+        interfaceController?.dismissTemplate(animated: true) { [weak self] _, _ in
             guard let self else { return }
             self.isPoppingToRoot = false
             self.voiceControlTemplateIsOnStack = false
