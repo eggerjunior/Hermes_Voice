@@ -4,6 +4,26 @@ Generated: 2026-07-13T17:21:45-03:00
 
 Record every deploy, TestFlight/App Store upload, web publish and external processing status here.
 
+## 2026-07-17 - Show active provider/model on CarPlay screen
+
+- App: Hermes Voice
+- Platform: iOS native SwiftUI
+- Bundle ID: `br.app.egger.HermesVoice`
+- Version/build prepared: `1.7.0` / `34`
+- Branch: `main`
+- Base commit before changes: `3eb0e87`
+- User request: show the user's speech transcript, Hermes's response, and the active provider/model at the bottom of the CarPlay screen.
+- Constraint found: `CarPlaySceneDelegate` uses only native CarPlay templates (`CPListTemplate` root + modal `CPVoiceControlTemplate`), no SwiftUI/custom view hosting. CarPlay's template API has no free-text box — `CPVoiceControlState` only supports a short rotating title + icon per state, and both `CPVoiceControlState`/`CPVoiceControlTemplate` are immutable after init (no way to update a live title). Live transcript/response text is therefore not feasible on CarPlay; user confirmed provider/model in the two fixed slots that do exist.
+- Fix (`Sources/App/CarPlaySceneDelegate.swift`): added `modelLabel(from:)` formatting `"<model> · <provider>"` from `VoiceSession.modelInfo`; shown in the root `CPListItem`'s `detailText` (updated live via a new `session.$modelInfo` subscription in `observeSession()`) and appended to the `idle` state's title. Since voice-control states can't be mutated, `voiceControlTemplate` is now rebuilt via `makeVoiceControlTemplate()` right before each `presentTemplate` call (never while on-screen) so the idle title reflects the latest model/provider.
+- Commands executed:
+  - `xcodebuild -project HermesVoice.xcodeproj -scheme HermesVoice -sdk iphonesimulator build CODE_SIGNING_ALLOWED=NO` — succeeded
+  - `git commit` + `git push` (CarPlay feature, then version bump)
+  - `xcodegen generate`
+  - `git commit` + `git push` (regenerated project + version bump)
+  - `./scripts/testflight.sh`
+- Result: archive/export/upload all succeeded (`** ARCHIVE SUCCEEDED **`, `** EXPORT SUCCEEDED **`, `Upload succeeded`).
+- Status: **`1.7.0` (34) uploaded to App Store Connect/TestFlight; package is processing.** Still needs hands-on verification in an actual CarPlay session that the model/provider label appears correctly in both the root list and the idle voice-control title.
+
 ## 2026-07-17 - Fix CarPlay voice-control X button and stuck "call" indicator
 
 - App: Hermes Voice
