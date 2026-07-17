@@ -6,8 +6,8 @@ options:
   createIntermediateGroups: true
 settings:
   base:
-    MARKETING_VERSION: "1.3.0"
-    CURRENT_PROJECT_VERSION: "26"
+    MARKETING_VERSION: "1.4.0"
+    CURRENT_PROJECT_VERSION: "27"
     SWIFT_VERSION: "5.0"
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: E743636TCJ
@@ -36,6 +36,12 @@ targets:
               - hermesvoice
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIBackgroundModes: [audio, voip]
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+          UISceneConfigurations:
+            CPTemplateApplicationSceneSessionRoleApplication:
+              - UISceneConfigurationName: CarPlay Configuration
+                UISceneDelegateClassName: "$(PRODUCT_MODULE_NAME).CarPlaySceneDelegate"
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         CFBundleIconName: AppIcon
@@ -49,7 +55,8 @@ targets:
         embed: true
     entitlements:
       path: Sources/HermesVoice.entitlements
-      properties: {}
+      properties:
+        com.apple.developer.carplay-voice-based-conversation: true
   HermesVoiceWidgets:
     type: app-extension
     platform: iOS

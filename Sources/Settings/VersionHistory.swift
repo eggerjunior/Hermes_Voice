@@ -16,8 +16,8 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.3.0"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "26"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.4.0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "27"
         return "\(version) (Build \(build))"
     }
     
@@ -56,6 +56,16 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.4.0",
+            build: "27",
+            date: "17/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "Adicionado app CarPlay nativo (cena CPTemplateApplicationScene) após liberação do entitlement carplay-voice-based-conversation pela Apple.",
+                "Tela do CarPlay permite ativar a conversa com o Hermes com um toque, além do fluxo existente por CallKit."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.3.0",
             build: "26",
             date: "13/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
@@ -64,7 +74,7 @@ class VersionManager {
                 "Adicionada Live Activity/Dynamic Island para acompanhar a chamada e a resposta do Hermes.",
                 "Mantida a integração CarPlay sem entitlement via CallKit, exibindo o Hermes como chamada do sistema no carro."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.2.14",
