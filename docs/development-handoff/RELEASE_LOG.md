@@ -4,6 +4,26 @@ Generated: 2026-07-13T17:21:45-03:00
 
 Record every deploy, TestFlight/App Store upload, web publish and external processing status here.
 
+## 2026-07-17 - Fix system mic indicator stuck orange after CarPlay call ends; drop fake hotword text
+
+- App: Hermes Voice
+- Platform: iOS native SwiftUI
+- Bundle ID: `br.app.egger.HermesVoice`
+- Version/build prepared: `1.7.1` / `35`
+- Branch: `main`
+- Base commit before changes: `cc86064`'s parent (`8fcccb9`)
+- User report (with screenshots): on the CarPlay voice screen, while actually listening ("Ouvindo…") the system's top-bar microphone indicator is NOT lit; after ending the call and returning to the root list, it turns orange — backwards from expected. Also asked to replace "Diga 'Ei Hermes'" with "Clique aqui para conversar com o Hermes" since there's no wake-word support.
+- Root cause (best-effort, unverified on a physical CarPlay unit — no simulator equivalent for the system mic indicator): `AudioEngineManager.stop()` called `audioEngine.stop()` before `removeTap(onBus:)` (reverse of Apple's recommended teardown order) and never disabled `setVoiceProcessingEnabled`. `VoiceSession.deactivateAudioSession()` swallowed `AVAudioSession.setActive(false)` failures via `try?` — if the Core Audio render thread hadn't finished tearing down yet, `setActive(false)` throws `isBusy` and the session stays active in `.playAndRecord`, which keeps the OS mic indicator lit after the call has ended.
+- Fix: `Sources/Audio/AudioEngineManager.swift` — `stop()` now removes the tap before stopping the engine and disables voice processing. `Sources/Session/VoiceSession.swift` — `deactivateAudioSession()` now retries `setActive(false)` once after a short delay if the first attempt throws.
+- Fix: `Sources/App/CarPlaySceneDelegate.swift` — replaced all three occurrences of "Diga 'Ei Hermes'" (list item text, idle voice-control title, active/inactive list text) with "Clique aqui para conversar com o Hermes".
+- Commands executed:
+  - `xcodebuild -project HermesVoice.xcodeproj -scheme HermesVoice -sdk iphonesimulator build` — succeeded
+  - `xcodegen generate`
+  - `git commit` + `git push`
+  - `./scripts/testflight.sh`
+- Result: archive/export/upload all succeeded (`** ARCHIVE SUCCEEDED **`, `** EXPORT SUCCEEDED **`, `Upload succeeded`).
+- Status: **`1.7.1` (35) uploaded to App Store Connect/TestFlight; package is processing.** Text change is directly verifiable. The mic-indicator fix is a plausible root cause based on code review only — no CarPlay hardware available in this session to confirm the orange indicator now tracks recording state correctly. Needs hands-on verification in an actual CarPlay session.
+
 ## 2026-07-17 - Show active provider/model on CarPlay screen
 
 - App: Hermes Voice
