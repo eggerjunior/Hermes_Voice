@@ -4,6 +4,27 @@ Generated: 2026-07-13T17:21:45-03:00
 
 Record every deploy, TestFlight/App Store upload, web publish and external processing status here.
 
+## 2026-07-18 - Fix app stuck in "Ouvindo..." forever after barge-in (1.8.0 regression)
+
+- App: Hermes Voice
+- Platform: iOS native SwiftUI
+- Bundle ID: `br.app.egger.HermesVoice`
+- Version/build prepared: `1.8.1` / `37`
+- Branch: `main`
+- Base commit before changes: `aa66e52`'s parent (`7ea0af6`)
+- User report: after interrupting Hermes with the wake word (or even without it, by the second turn), the app gets stuck showing "Ouvindo..." forever and stops responding.
+- Root cause: `SpeechSynthesizer.stop()` (called both by the new wake-word interrupt and, less obviously, whenever `AVSpeechSynthesizer.stopSpeaking(at:)` cancels multiple already-queued sentence utterances) fires `didCancel` once per canceled utterance. Each of those calls checked `pendingUtterances == 0 && !turnOpen` — a condition that, once true, stays true for every subsequent cancel in the same batch — so `speechSynthesizerDidFinishSpeaking()` fired multiple times in a row. Each firing called `SpeechRecognizer.shared.startRecording()`, which internally does `stopRecording()` then immediately spins up a new `SFSpeechRecognitionTask`. Firing that in tight succession raced the still-tearing-down previous task and could leave `SFSpeechRecognizer` in a state where it accepted audio but never delivered another result — the app's `sessionState` said `.listening`, but nothing was actually listening.
+- Fix 1 (`Sources/Speech/SpeechSynthesizer.swift`): added a `didNotifyFinish` flag (mirrors the existing `didNotifyStart` pattern), reset in `beginTurn()`, consumed by a new `notifyFinishIfNeeded()` that all three call sites (`endTurn`, `didFinish`, `didCancel`) now go through — guarantees at most one "finished speaking" notification per turn.
+- Fix 2 (`Sources/Speech/SpeechRecognizer.swift` + `Sources/Session/VoiceSession.swift`): added `speechRecognizerDidFail()` to the delegate protocol. The recognition task's error branch now distinguishes an intentional stop (we'd already called `stopRecording()` ourselves, so `isListening` was already false) from a genuine unexpected death (`isListening` still true) — only the latter notifies the delegate. `VoiceSession.speechRecognizerDidFail()` retries `startRecording()` once after a 0.3s delay if still in `.listening`/`.speaking` and unmuted, as a self-healing safety net regardless of root cause.
+- Fix 3 (`Sources/Session/VoiceSession.swift`): added an RMS energy gate (`bargeInEnergyThreshold = 0.02`, linear full-scale) — while `.speaking`, mic buffers are only forwarded to the recognizer above that threshold, to reduce the risk of Hermes hearing its own name in its own echo (imperfect AEC) and self-interrupting. Heuristic threshold, not validated on a physical device against real echo levels in this session — may need tuning based on field reports.
+- Commands executed:
+  - `xcodebuild -project HermesVoice.xcodeproj -scheme HermesVoice -destination 'generic/platform=iOS Simulator' build` — succeeded
+  - `xcodegen generate`
+  - `git commit` + `git push`
+  - `./scripts/testflight.sh`
+- Result: archive/export/upload all succeeded (`Upload succeeded`).
+- Status: **`1.8.1` (37) uploaded to App Store Connect/TestFlight; package is processing.** Fix 1 is a definite, high-confidence correctness fix (the multi-notify bug was unambiguous from reading the code). Fixes 2 and 3 are defense-in-depth / best-effort — not exercised with real device audio in this session. Recommend hands-on retest of: (a) interrupting mid-sentence with "Hermes", (b) doing at least 3 consecutive turns without interrupting, (c) a response where Hermes says its own name, to confirm no more stuck states or false self-interrupts.
+
 ## 2026-07-18 - Barge-in wake word, provider label on main screen, AIsa provider
 
 - App: Hermes Voice
