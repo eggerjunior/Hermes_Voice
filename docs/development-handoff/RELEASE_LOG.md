@@ -4,6 +4,35 @@ Generated: 2026-07-13T17:21:45-03:00
 
 Record every deploy, TestFlight/App Store upload, web publish and external processing status here.
 
+## 2026-07-18 - Barge-in wake word, provider label on main screen, AIsa provider
+
+- App: Hermes Voice
+- Platform: iOS native SwiftUI + backend microservice on VPS (egger.app.br)
+- Bundle ID: `br.app.egger.HermesVoice`
+- Version/build prepared: `1.8.0` / `36`
+- Branch: `main`
+- Base commit before changes: `8f9e7f7`
+- User reports (App Store feedback, 3 items with screenshots):
+  1. Wants a way to interrupt Hermes mid-speech with an activation word, staying background-listening while it talks (like Jarvis).
+  2. Main screen only showed "motor · modelo"; wants provider shown too (3 pieces of info).
+  3. Wants the "AISA" provider (console.aisa.one) added to the provider/model picker in Settings.
+- Fix 1 (barge-in): `Sources/Session/VoiceSession.swift`, `Sources/App/RootView.swift` unaffected for this part. Mic now stays live during `.speaking` (`AudioEngineManager` tap now forwards buffers when `sessionState` is `.listening` OR `.speaking`; `speechSynthesizerDidStartSpeaking()` restarts the recognizer instead of stopping it). `speechRecognizerDidRecognizeText` checks for the wake word "hermes" (diacritic/case-insensitive substring) while `.speaking` and calls `SpeechSynthesizer.shared.stop()` on match, which lets the existing `didCancel` → `speechSynthesizerDidFinishSpeaking()` plumbing return the app to `.listening`. `speechRecognizerDidDetectSilence` now ignores events fired while `.speaking` (that recognizer pass is only for wake-word detection, not full turns). Relies on the AEC already enabled via `AVAudioInputNode.setVoiceProcessingEnabled(true)` (`AudioEngineManager.swift`) + shared `.voiceChat` audio session (`synthesizer.usesApplicationAudioSession = true`) for echo rejection — not verified on a physical device in this session, only by build success and code review.
+- Fix 2 (provider label): `Sources/Session/VoiceSession.swift` — added `providerLabel` (fetched via `HermesAgentClient.fetchAvailableModels()`, matched against `catalog.activeProvider`), refreshed alongside `modelInfo` on launch and after connect. `Sources/App/RootView.swift` — now shows `"<providerLabel> · <motor> · <modelo>"` when available, falling back to the old 2-piece format.
+- Fix 3 (AIsa provider) — backend change on VPS, **outside this git repo**:
+  - `/opt/hermes-model-admin/app.py` (service `hermes-model-admin.service`, 127.0.0.1:9120): added `aisa` to `PROVIDER_LABELS` ("AIsa"), `PROVIDER_BASE_URL` (`https://api.aisa.one/v1`, confirmed OpenAI-compatible via `aisa.one/docs`), and a new `_fetch_aisa_models` fetcher hitting `GET /v1/models` with the user-supplied `AISA_API_KEY`.
+  - `/docker/hermes-webui-wzbj/docker-compose.yml`: added `AISA_API_KEY: ${AISA_API_KEY:-}` to the `hermes-agent` service's `environment:` block (it was already present in `/home/hermes/.hermes/.env`, hermes's own secrets file, but that file isn't what feeds the container's OS env — `/docker/hermes-webui-wzbj/.env` via `env_file:` is).
+  - `/docker/hermes-webui-wzbj/.env`: appended `AISA_API_KEY=<key provided by user in chat>`.
+  - Both compose file and app.py backed up (`.bak_<timestamp>`) before editing. Container `hermes-webui-wzbj-hermes-agent-1` recreated with `docker compose up -d --force-recreate hermes-agent`; `hermes-model-admin.service` restarted. Verified via `curl 127.0.0.1:9120/api/models` → `aisa` provider now lists 100 models.
+  - Not yet verified: actually switching the active model to an `aisa/*` model end-to-end through `hermes config set` + container restart (the picker lists it, but a live switch+healthcheck round-trip wasn't exercised this session).
+- Commands executed:
+  - `xcodebuild -project HermesVoice.xcodeproj -scheme HermesVoice -destination 'generic/platform=iOS Simulator' build` — succeeded (twice, after each Swift change)
+  - `xcodegen generate`
+  - `git commit` + `git push`
+  - `./scripts/testflight.sh`
+  - VPS: various `ssh root@2.25.189.37` commands to inspect and edit `hermes-model-admin`, `docker-compose.yml`, `.env`; `docker compose up -d --force-recreate hermes-agent`; `systemctl restart hermes-model-admin`
+- Result: archive/export/upload all succeeded (`** ARCHIVE SUCCEEDED **`, `** EXPORT SUCCEEDED **`, `Upload succeeded`).
+- Status: **`1.8.0` (36) uploaded to App Store Connect/TestFlight; package is processing.** Provider label and AIsa catalog listing are directly verified (curl). Barge-in logic builds cleanly and follows the existing state machine, but was not exercised on a physical device with real audio in this session — recommend a hands-on test of interrupting Hermes mid-sentence by saying "Hermes" before considering this fully verified.
+
 ## 2026-07-17 - Fix system mic indicator stuck orange after CarPlay call ends; drop fake hotword text
 
 - App: Hermes Voice
