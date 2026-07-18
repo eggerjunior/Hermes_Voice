@@ -24,6 +24,7 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
     @Published var hermesResponse: String = ""
     @Published var connectionLog: String = ""
     @Published var modelInfo: HermesAgentClient.ModelInfo? = nil
+    @Published var providerLabel: String? = nil
 
     private var cancellables = Set<AnyCancellable>()
     private var accumulatedResponse = ""
@@ -52,6 +53,7 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
         SpeechSynthesizer.shared.delegate = self
 
         refreshModelInfo()
+        refreshProviderLabel()
     }
 
     // MARK: - Ações Públicas
@@ -71,6 +73,18 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
         }
     }
 
+    /// Consulta o catálogo de providers para exibir o nome comercial (ex.: "Google
+    /// Gemini") do provider ativo, complementando `modelInfo` (que só traz o motor,
+    /// ex.: "gemini") na tela principal.
+    func refreshProviderLabel() {
+        Task {
+            if let catalog = try? await HermesAgentClient.shared.fetchAvailableModels() {
+                let label = catalog.providers.first(where: { $0.id == catalog.activeProvider })?.label
+                await MainActor.run { self.providerLabel = label ?? catalog.activeProvider }
+            }
+        }
+    }
+
     func endCall() {
         guard isCallActive else { return }
         stopAudioAndAgent()
@@ -81,9 +95,17 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
         isMuted.toggle()
         if isMuted {
             SpeechRecognizer.shared.stopRecording()
-        } else if sessionState == .listening {
+        } else if sessionState == .listening || sessionState == .speaking {
             try? SpeechRecognizer.shared.startRecording()
         }
+    }
+
+    /// Palavra de ativação que interrompe o Hermes enquanto ele fala (estilo Jarvis):
+    /// dito o nome, ele para na hora e volta a ouvir. Comparação sem acento/maiúsculas
+    /// e por substring — cobre "Hermes", "Ei Hermes", "Hermes, pera" etc.
+    private func containsWakeWord(_ text: String) -> Bool {
+        let normalized = text.folding(options: .diacriticInsensitive, locale: .current).lowercased()
+        return normalized.contains("hermes")
     }
 
     /// Ativa a sessão de áudio direto (sem CallKit — igual ao Jarvis), para não
@@ -167,6 +189,7 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
                 do {
                     try await HermesAgentClient.shared.connect()
                     self.refreshModelInfo()
+                    self.refreshProviderLabel()
                 } catch {
                     print("Erro ao tentar conectar ao WebSocket: \(error.localizedDescription)")
                     DispatchQueue.main.async {
@@ -222,8 +245,9 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
 // MARK: - AudioEngineManagerDelegate
 extension VoiceSession: AudioEngineManagerDelegate {
     func audioEngineDidReceiveBuffer(_ buffer: AVAudioPCMBuffer, time: AVAudioTime) {
-        // Encaminha buffers de áudio do tap para o STT apenas quando estamos escutando o usuário e sem mute
-        if sessionState == .listening && !isMuted {
+        // Encaminha buffers de áudio do tap para o STT quando estamos ouvindo o usuário,
+        // e também enquanto o Hermes fala (para captar a palavra de ativação de interrupção).
+        if (sessionState == .listening || sessionState == .speaking) && !isMuted {
             SpeechRecognizer.shared.appendAudioBuffer(buffer)
         }
     }
@@ -232,6 +256,16 @@ extension VoiceSession: AudioEngineManagerDelegate {
 // MARK: - SpeechRecognizerDelegate
 extension VoiceSession: SpeechRecognizerDelegate {
     func speechRecognizerDidRecognizeText(_ text: String) {
+        // Enquanto o Hermes fala, o reconhecedor só está ativo para ouvir a palavra de
+        // ativação — não tratamos o parcial como transcrição de um novo turno.
+        if sessionState == .speaking {
+            if containsWakeWord(text) {
+                print("Palavra de ativação detectada durante a fala: interrompendo o Hermes.")
+                SpeechSynthesizer.shared.stop()
+            }
+            return
+        }
+
         print("Reconhecido parcial: \(text)")
         DispatchQueue.main.async {
             self.currentTranscript = text
@@ -242,8 +276,12 @@ extension VoiceSession: SpeechRecognizerDelegate {
             response: "Transcrevendo sua fala."
         )
     }
-    
+
     func speechRecognizerDidDetectSilence(withText text: String) {
+        // Ignora silêncio detectado enquanto o Hermes fala — nesse estado o reconhecedor
+        // só está ativo para captar a palavra de ativação (ver speechRecognizerDidRecognizeText).
+        guard sessionState != .speaking else { return }
+
         print("Silêncio detectado. Enviando texto final: \(text)")
         lastPrompt = text
         
@@ -364,7 +402,11 @@ extension VoiceSession: SpeechSynthesizerDelegate {
             prompt: lastPrompt.isEmpty ? "Hermes Voice" : lastPrompt,
             response: hermesResponse.isEmpty ? "Hermes está falando." : hermesResponse
         )
-        SpeechRecognizer.shared.stopRecording()
+        // Mantém o microfone ativo (em vez de parar) para poder ouvir a palavra de
+        // ativação e interromper o Hermes no meio da fala, como o Jarvis faz.
+        if !isMuted {
+            try? SpeechRecognizer.shared.startRecording()
+        }
     }
     
     func speechSynthesizerDidFinishSpeaking() {

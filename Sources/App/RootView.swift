@@ -34,7 +34,11 @@ struct RootView: View {
                     if let modelInfo = session.modelInfo {
                         HStack(spacing: 6) {
                             Image(systemName: "cpu")
-                            Text("\(modelInfo.model) · \(modelInfo.provider)")
+                            if let providerLabel = session.providerLabel {
+                                Text("\(providerLabel) · \(modelInfo.provider) · \(modelInfo.model)")
+                            } else {
+                                Text("\(modelInfo.model) · \(modelInfo.provider)")
+                            }
                         }
                         .font(.caption)
                         .foregroundColor(.secondary)
