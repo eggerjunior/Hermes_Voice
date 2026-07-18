@@ -16,8 +16,8 @@ class VersionManager {
     
     // Retorna a versão de marketing (ex: 1.0.5) e o número de build (ex: 6)
     var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.8.1"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "37"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.8.2"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "38"
         return "\(version) (Build \(build))"
     }
     
@@ -56,15 +56,24 @@ class VersionManager {
     // Histórico de alterações do aplicativo com datas e mudanças realizadas
     let history: [VersionEntry] = [
         VersionEntry(
+            version: "1.8.2",
+            build: "38",
+            date: "18/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            changes: [
+                "Removido o filtro de nível de microfone introduzido na 1.8.1: o cancelamento de eco do sistema já abafa bastante o áudio enquanto o Hermes fala, então o limiar também bloqueava a fala real do usuário e a palavra de ativação \"Hermes\" parou de interromper a resposta."
+            ],
+            isCurrent: true
+        ),
+        VersionEntry(
             version: "1.8.1",
             build: "37",
-            date: "18/07/2026 00:00:00", // Sobrescrito dinamicamente pela data real do build
+            date: "18/07/2026 00:00:00",
             changes: [
                 "Corrigido o bug do barge-in (1.8.0) que deixava o app preso em \"Ouvindo...\" para sempre depois de interromper o Hermes (ou já na segunda resposta): o sintetizador de fala notificava o fim da fala várias vezes seguidas ao cancelar frases enfileiradas, reiniciando o reconhecedor de voz antes dele terminar de desligar.",
                 "Reconhecedor de fala agora se recupera sozinho se cair inesperadamente enquanto deveria estar ouvindo (antes ficava mudo até o usuário encerrar e reabrir a chamada).",
                 "Adicionado filtro de nível de microfone durante a fala do Hermes, para reduzir o risco de autointerrupção quando a resposta menciona o próprio nome \"Hermes\"."
             ],
-            isCurrent: true
+            isCurrent: false
         ),
         VersionEntry(
             version: "1.8.0",

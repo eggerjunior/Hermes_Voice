@@ -245,37 +245,15 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
 // MARK: - AudioEngineManagerDelegate
 extension VoiceSession: AudioEngineManagerDelegate {
     func audioEngineDidReceiveBuffer(_ buffer: AVAudioPCMBuffer, time: AVAudioTime) {
-        guard !isMuted else { return }
-        switch sessionState {
-        case .listening:
+        // Encaminha buffers de áudio do tap para o STT quando estamos ouvindo o usuário,
+        // e também enquanto o Hermes fala (para captar a palavra de ativação de interrupção).
+        // (Um filtro de nível de microfone para reduzir autointerrupção por eco foi tentado
+        // aqui e removido: o AEC do sistema já abafa bastante o microfone enquanto o
+        // alto-falante toca, então o limiar também cortava a fala real do usuário e a
+        // palavra de ativação parava de funcionar.)
+        if (sessionState == .listening || sessionState == .speaking) && !isMuted {
             SpeechRecognizer.shared.appendAudioBuffer(buffer)
-        case .speaking:
-            // Enquanto o Hermes fala, só repassa ao reconhecedor quando o nível do
-            // microfone indica fala direta do usuário — o cancelamento de eco (AEC)
-            // não é perfeito, e sem esse filtro de energia o próprio Hermes dizendo seu
-            // nome ("Sou o Hermes...") pode vazar pelo alto-falante, ser captado como eco
-            // residual e disparar uma autointerrupção falsa.
-            if Self.bufferRMS(buffer) > Self.bargeInEnergyThreshold {
-                SpeechRecognizer.shared.appendAudioBuffer(buffer)
-            }
-        default:
-            break
         }
-    }
-
-    private static let bargeInEnergyThreshold: Float = 0.02
-
-    private static func bufferRMS(_ buffer: AVAudioPCMBuffer) -> Float {
-        guard let channelData = buffer.floatChannelData else { return 0 }
-        let frameCount = Int(buffer.frameLength)
-        guard frameCount > 0 else { return 0 }
-        let samples = channelData[0]
-        var sum: Float = 0
-        for i in 0..<frameCount {
-            let s = samples[i]
-            sum += s * s
-        }
-        return (sum / Float(frameCount)).squareRoot()
     }
 }
 
