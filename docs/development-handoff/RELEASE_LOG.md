@@ -4,6 +4,20 @@ Generated: 2026-07-13T17:21:45-03:00
 
 Record every deploy, TestFlight/App Store upload, web publish and external processing status here.
 
+## 2026-07-18 - Remove barge-in energy gate that blocked the wake word (1.8.1 regression)
+
+- App: Hermes Voice
+- Bundle ID: `br.app.egger.HermesVoice`
+- Version/build prepared: `1.8.2` / `38`
+- Branch: `main`
+- Base commit before changes: `c3a0060`'s parent (`a02eed2`)
+- User report: right after the 1.8.1 fix, saying "Hermes" no longer interrupts Hermes at all — it just keeps talking.
+- Root cause: the RMS energy gate added in 1.8.1 (`bargeInEnergyThreshold = 0.02`, meant to stop Hermes self-interrupting on its own echo) was too aggressive. iOS's built-in AEC/echo suppression already ducks the mic input heavily while the device is simultaneously playing audio in `.voiceChat` mode — so the user's real voice saying "Hermes" while Hermes was speaking was *also* getting suppressed below the threshold most of the time, not just the echo. Net effect: the wake word almost never reached the recognizer.
+- Fix (`Sources/Session/VoiceSession.swift`): removed the RMS gate entirely; `audioEngineDidReceiveBuffer` is back to forwarding every buffer to the recognizer during `.listening` OR `.speaking` (unfiltered), same as 1.8.0. Wake-word detection now depends purely on the recognized text, same as before 1.8.1. The self-notify-once fix and the auto-recovery-on-failure fix from 1.8.1 are unaffected and stay in place.
+- Commands executed: `xcodebuild ... build` (succeeded), `xcodegen generate`, `git commit` + `git push`, `./scripts/testflight.sh`.
+- Result: archive/export/upload all succeeded (`Upload succeeded`).
+- Status: **`1.8.2` (38) uploaded to App Store Connect/TestFlight; package is processing.** No longer attempting to solve the self-echo false-positive risk via amplitude — if it resurfaces, a better approach would be needed (e.g. requiring the wake word to appear as a short, standalone utterance rather than embedded in a longer transcript, or comparing timing against TTS utterance boundaries) rather than a blanket RMS threshold.
+
 ## 2026-07-18 - Fix app stuck in "Ouvindo..." forever after barge-in (1.8.0 regression)
 
 - App: Hermes Voice
