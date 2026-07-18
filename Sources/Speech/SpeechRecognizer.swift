@@ -5,6 +5,7 @@ import AVFoundation
 protocol SpeechRecognizerDelegate: AnyObject {
     func speechRecognizerDidRecognizeText(_ text: String)
     func speechRecognizerDidDetectSilence(withText text: String)
+    func speechRecognizerDidFail()
 }
 
 class SpeechRecognizer {
@@ -84,8 +85,17 @@ class SpeechRecognizer {
             }
             
             if error != nil {
-                // Em caso de erro, interrompemos
+                // `isListening` só é falso aqui se nós mesmos já tivéssemos chamado
+                // stopRecording() (ex.: ao trocar de turno) — nesse caso este é só o
+                // callback de cauda da tarefa cancelada, não uma falha de verdade.
+                // Se ainda estava true, o reconhecimento morreu sozinho: avisa o
+                // delegate para tentar reiniciar, senão o app fica "ouvindo" sem
+                // nunca mais receber resultado nenhum.
+                let wasActive = self.isListening
                 self.stopRecording()
+                if wasActive {
+                    self.delegate?.speechRecognizerDidFail()
+                }
             }
         }
     }

@@ -20,6 +20,7 @@ class SpeechSynthesizer: NSObject, @unchecked Sendable {
     private var pendingUtterances = 0
     private var turnOpen = false
     private var didNotifyStart = false
+    private var didNotifyFinish = false
 
     private override init() {
         super.init()
@@ -43,7 +44,20 @@ class SpeechSynthesizer: NSObject, @unchecked Sendable {
             self.pendingUtterances = 0
             self.turnOpen = true
             self.didNotifyStart = false
+            self.didNotifyFinish = false
         }
+    }
+
+    /// Avisa o fim da fala no máximo uma vez por turno. `stop()` cancela de uma vez todas
+    /// as falas pendentes na fila do AVSpeechSynthesizer, e cada uma delas dispara seu
+    /// próprio callback `didCancel` — sem essa trava, um turno com várias frases enfileiradas
+    /// notificava o delegate várias vezes seguidas, cada uma reiniciando o reconhecedor de
+    /// fala (`SpeechRecognizer`) antes do anterior terminar de desligar, o que podia deixar o
+    /// reconhecimento travado (app "ouvindo" para sempre sem processar nada).
+    private func notifyFinishIfNeeded() {
+        guard !didNotifyFinish else { return }
+        didNotifyFinish = true
+        delegate?.speechSynthesizerDidFinishSpeaking()
     }
 
     /// Enfileira uma frase para ser falada (sem interromper as anteriores).
@@ -64,7 +78,7 @@ class SpeechSynthesizer: NSObject, @unchecked Sendable {
         DispatchQueue.main.async {
             self.turnOpen = false
             if self.pendingUtterances == 0 {
-                self.delegate?.speechSynthesizerDidFinishSpeaking()
+                self.notifyFinishIfNeeded()
             }
         }
     }
@@ -103,14 +117,14 @@ extension SpeechSynthesizer: AVSpeechSynthesizerDelegate {
         pendingUtterances = max(0, pendingUtterances - 1)
         // Só volta a ouvir quando o turno foi fechado E a fila esvaziou.
         if pendingUtterances == 0 && !turnOpen {
-            delegate?.speechSynthesizerDidFinishSpeaking()
+            notifyFinishIfNeeded()
         }
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
         pendingUtterances = max(0, pendingUtterances - 1)
         if pendingUtterances == 0 && !turnOpen {
-            delegate?.speechSynthesizerDidFinishSpeaking()
+            notifyFinishIfNeeded()
         }
     }
 }

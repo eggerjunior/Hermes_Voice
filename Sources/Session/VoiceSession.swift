@@ -245,11 +245,37 @@ class VoiceSession: ObservableObject, @unchecked Sendable {
 // MARK: - AudioEngineManagerDelegate
 extension VoiceSession: AudioEngineManagerDelegate {
     func audioEngineDidReceiveBuffer(_ buffer: AVAudioPCMBuffer, time: AVAudioTime) {
-        // Encaminha buffers de áudio do tap para o STT quando estamos ouvindo o usuário,
-        // e também enquanto o Hermes fala (para captar a palavra de ativação de interrupção).
-        if (sessionState == .listening || sessionState == .speaking) && !isMuted {
+        guard !isMuted else { return }
+        switch sessionState {
+        case .listening:
             SpeechRecognizer.shared.appendAudioBuffer(buffer)
+        case .speaking:
+            // Enquanto o Hermes fala, só repassa ao reconhecedor quando o nível do
+            // microfone indica fala direta do usuário — o cancelamento de eco (AEC)
+            // não é perfeito, e sem esse filtro de energia o próprio Hermes dizendo seu
+            // nome ("Sou o Hermes...") pode vazar pelo alto-falante, ser captado como eco
+            // residual e disparar uma autointerrupção falsa.
+            if Self.bufferRMS(buffer) > Self.bargeInEnergyThreshold {
+                SpeechRecognizer.shared.appendAudioBuffer(buffer)
+            }
+        default:
+            break
         }
+    }
+
+    private static let bargeInEnergyThreshold: Float = 0.02
+
+    private static func bufferRMS(_ buffer: AVAudioPCMBuffer) -> Float {
+        guard let channelData = buffer.floatChannelData else { return 0 }
+        let frameCount = Int(buffer.frameLength)
+        guard frameCount > 0 else { return 0 }
+        let samples = channelData[0]
+        var sum: Float = 0
+        for i in 0..<frameCount {
+            let s = samples[i]
+            sum += s * s
+        }
+        return (sum / Float(frameCount)).squareRoot()
     }
 }
 
@@ -275,6 +301,20 @@ extension VoiceSession: SpeechRecognizerDelegate {
             prompt: text.isEmpty ? "Fale com o Hermes." : text,
             response: "Transcrevendo sua fala."
         )
+    }
+
+    /// O reconhecimento de fala morreu sozinho (erro do SFSpeechRecognizer) enquanto
+    /// deveríamos estar ouvindo — sem isso o app fica preso em "Ouvindo..." para sempre,
+    /// já que nenhum resultado novo chega para acionar o timer de silêncio. Tenta
+    /// reiniciar uma vez após um pequeno atraso (evita loop apertado se o erro persistir)
+    /// e reconfere o estado no momento do disparo, caso a ligação já tenha mudado.
+    func speechRecognizerDidFail() {
+        guard (sessionState == .listening || sessionState == .speaking), !isMuted else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            guard let self else { return }
+            guard (self.sessionState == .listening || self.sessionState == .speaking), !self.isMuted else { return }
+            try? SpeechRecognizer.shared.startRecording()
+        }
     }
 
     func speechRecognizerDidDetectSilence(withText text: String) {
