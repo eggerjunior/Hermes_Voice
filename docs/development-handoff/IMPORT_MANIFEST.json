@@ -1,30 +1,30 @@
 {
   "schema": "ildemar_project-handoff-docs/v1",
-  "generated_at": "2026-07-17T20:15:43-03:00",
+  "generated_at": "2026-07-26T16:10:25-03:00",
   "project": {
     "name": "Hermes_Voice",
-    "root": "/Users/ildemareggerjunior/Projects/Hermes_Voice",
+    "root": "/host/opt/projetos/Hermes_Voice",
     "stack": [
       "ios_xcodegen"
     ]
   },
   "git": {
     "branch": "main",
-    "commit": "3eb0e877",
-    "status": "M docs/development-handoff/RELEASE_LOG.md",
+    "commit": "c572646a",
+    "status": "",
     "remote": "https://github.com/eggerjunior/Hermes_Voice.git",
     "latest_commits": [
-      "3eb0e87 Bump 1.6.2 (33): registra correção do X/indicador de chamada no CarPlay",
-      "be3768d Corrige X que não fazia nada e indicador de chamada preso no CarPlay",
-      "7ba74c2 Registra upload do 1.6.1 (32) no release log e atualiza docs de handoff",
-      "0117970 Bump 1.6.1 (32): registra aumento da área de transcrição no changelog",
-      "ee54ab9 Aumenta área de transcrição da fala do usuário e resposta do Hermes"
+      "c572646 Registra upload do 1.8.2 (38) no release log",
+      "c3a0060 Bump 1.8.2 (38): remove filtro de nível de microfone que travava o barge-in",
+      "a02eed2 Registra upload do 1.8.1 (37) no release log",
+      "aa66e52 Bump 1.8.1 (37): corrige app travado em \"Ouvindo...\" após barge-in",
+      "7ea0af6 Registra upload do 1.8.0 (36) no release log"
     ],
     "latest_tags": []
   },
   "version": {
-    "version": "1.6.2",
-    "build": "33",
+    "version": "1.8.2",
+    "build": "38",
     "git_commit_fallback": "dev",
     "bundle_id": "br.app.egger.HermesVoice",
     "development_team": "E743636TCJ"

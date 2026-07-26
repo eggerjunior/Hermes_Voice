@@ -1,16 +1,16 @@
 # Project Context
 
-Generated: 2026-07-17T20:15:43-03:00
+Generated: 2026-07-26T16:10:25-03:00
 
 ## Snapshot
 
 - Project: `Hermes_Voice`
-- Root: `/Users/ildemareggerjunior/Projects/Hermes_Voice`
+- Root: `/host/opt/projetos/Hermes_Voice`
 - Branch: `main`
-- Commit: `3eb0e877`
-- Git status: dirty
-- Version: `1.6.2`
-- Build: `33`
+- Commit: `c572646a`
+- Git status: clean
+- Version: `1.8.2`
+- Build: `38`
 - Bundle/package id: `br.app.egger.HermesVoice`
 - Detected stack: ios_xcodegen
 
@@ -49,8 +49,8 @@ Detected version/build fields:
 
 ```json
 {
-  "version": "1.6.2",
-  "build": "33",
+  "version": "1.8.2",
+  "build": "38",
   "git_commit_fallback": "dev",
   "bundle_id": "br.app.egger.HermesVoice",
   "development_team": "E743636TCJ"

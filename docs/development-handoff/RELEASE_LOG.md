@@ -4,6 +4,22 @@ Generated: 2026-07-13T17:21:45-03:00
 
 Record every deploy, TestFlight/App Store upload, web publish and external processing status here.
 
+## 2026-07-26 - Fix AIsa model switch (HTTP 502 healthcheck revert) — backend only, no app version bump
+
+- App: Hermes Voice
+- Platform: backend microservice on VPS (egger.app.br) — **no iOS code changed, no new TestFlight build**
+- Bundle ID: `br.app.egger.HermesVoice`
+- Branch: `main` (this fix touches nothing tracked in this git repo)
+- User report (TestFlight feedback, `feedback.json` id `AC3pueTzBCBWPfbWWpmyrss`, comment "Erro para trocar modelo"): switching provider/model to AIsa `deepseek-v4-pro` in Settings failed with `HTTP 502 {"detail":"Troca aplicada mas o healthcheck falhou, config revertido...` — this is the exact end-to-end AIsa switch scenario flagged as "not yet verified" in the 2026-07-18 entry below (line ~61).
+- Root cause: `/opt/hermes-model-admin/app.py` (`PUT /api/model`) wrote `model.provider: aisa` into the hermes-agent's `config.yaml`, but hermes-agent's real provider taxonomy has no native `aisa` type — AIsa is only a generic OpenAI-compatible gateway, reachable exclusively via hermes-agent's bare `model.provider: custom` endpoint (confirmed in `/opt/hermes/hermes_cli/model_switch.py::_bare_custom_provider_def`). The catalog-validation and config-write steps succeeded and `/admin/model-info` reported the switch as applied, but the first real chat completion after restart hit `Unknown provider 'aisa'`, which failed the healthcheck's chat-completion step and triggered the automatic config revert back to Gemini.
+- Fix (`/opt/hermes-model-admin/app.py`, backed up as `app.py.bak_20260726155723` before editing):
+  1. New `HERMES_PROVIDER_SLUG` map translates the admin's internal id `aisa` → hermes's real `custom` provider slug when writing `model.provider`. Native providers (gemini/anthropic/openrouter/groq) map to themselves — unchanged behavior.
+  2. New `CUSTOM_ENDPOINT_API_KEY_ENV` map: hermes-agent's bare `custom` provider has `api_key_env_vars=()` — it never resolves credentials from env vars, unlike native providers. The key now gets written inline via `hermes config set model.api_key <value>` whenever the target `hermes_provider == "custom"` (currently just `aisa`, reading `AISA_API_KEY` from the container env).
+  3. `_read_active_model()` now translates `custom` back to the admin's own id (matching by `base_url`) so `/api/models`'s `active` field — and therefore the app's provider label — still shows `aisa`/"AIsa" instead of the raw `custom` slug.
+  4. Secondary bug found while verifying the first fix: the endpoint used a fixed `time.sleep(8)` between `docker restart` and running the confirmation healthcheck. Measured in practice, the gateway sometimes takes ~10s to rebind port 8642, which caused false-negative reverts even when the model switch itself was correct. Replaced both `time.sleep(8)` calls with a new `_wait_for_local_health()` that polls the local `/health` for up to 30s.
+- Verification: reproduced the original error directly against the admin API (`127.0.0.1:9120/api/model`), got the same message as the user's feedback (untruncated this time: `Unknown provider 'aisa'...`). Applied the fix, restarted `hermes-model-admin.service`, retried the same switch — full healthcheck passed (including a real chat completion), and `/api/models` now reports `active={'provider': 'aisa', 'model': 'deepseek-v4-pro'}`. Server is currently running `aisa/deepseek-v4-pro` (was `gemini/gemini-2.5-flash` before this session).
+- Status: **Fixed and verified on the live VPS.** No app-side change, so no new build/upload needed for this specific issue. Not yet exercised: other AIsa models beyond `deepseek-v4-pro` (should behave identically since the fix is provider-level, not model-specific), and no regression test was done by switching back to Gemini and forth again (low risk — native-provider code path is untouched, identical to before this fix).
+
 ## 2026-07-18 - Remove barge-in energy gate that blocked the wake word (1.8.1 regression)
 
 - App: Hermes Voice
