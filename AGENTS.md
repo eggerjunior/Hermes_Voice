@@ -7,4 +7,3 @@ Não há workflows GitHub Actions atuais. Qualquer build/CI iOS exige macOS/Xcod
 deve seguir `ildemar_ios-native-testflight`; não tente executar Xcode em runner
 Linux. Leia `ildemar-github-actions-self-hosted` antes de criar CI. Não faça deploy,
 release, bump, push ou alteração de secrets sem solicitação explícita.
-
