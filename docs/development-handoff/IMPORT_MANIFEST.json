@@ -45,6 +45,7 @@
   ],
   "screenshots": [],
   "import_order": [
+    "AGENTS.md",
     "docs/development-handoff/README.md",
     "docs/development-handoff/PROJECT_CONTEXT.md",
     "docs/development-handoff/RELEASE_LOG.md",
